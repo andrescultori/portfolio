@@ -1,0 +1,139 @@
+[
+  {
+    "slug": "lgnd-checklist",
+    "title": "Legendários — Checklist de Equipamentos",
+    "cardImage": "img/projects/lgnd-checklist/02-checklist-ataque.jpg",
+    "screenshots": [
+      "img/projects/lgnd-checklist/01-login.jpg",
+      "img/projects/lgnd-checklist/02-checklist-ataque.jpg",
+      "img/projects/lgnd-checklist/03-checklist-cargueira.jpg",
+      "img/projects/lgnd-checklist/04-checklist-comprar.jpg",
+      "img/projects/lgnd-checklist/05-editar-item.jpg"
+    ],
+    "description": {
+      "pt": "App web para o grupo de trekking Legendários organizarem o checklist de equipamentos das duas mochilas da trilha (ataque e cargueira), com progresso salvo por usuário e sincronizado em tempo real na nuvem.",
+      "en": "Web app for the Legendários trekking group to manage their gear checklist across two trail bags (daypack and cargo), with per-user progress synced to the cloud in real time."
+    },
+    "stack": ["HTML", "CSS", "JavaScript", "Supabase", "Google OAuth"],
+    "links": {
+      "github": "https://github.com/andrescultori/lgnd-checklist"
+    },
+    "note": {
+      "pt": "Sistema real em produção, usado por um grupo privado — sem link de demonstração pública.",
+      "en": "Real production system used by a private group — no public demo link."
+    },
+    "commercial": true,
+    "featured": true,
+    "sortOrder": 0
+  },
+  {
+    "slug": "dashboard-financeiro",
+    "title": "Dashboard Financeiro",
+    "cardImage": "img/projects/dashboard-financeiro/card.svg",
+    "screenshots": [],
+    "description": {
+      "pt": "Dashboard financeiro interativo (HTML/JS puro, sem framework) com pipeline de automação ponta a ponta via n8n — do ERP até a publicação, sem intervenção manual. Dados fictícios para demonstração.",
+      "en": "Interactive financial dashboard (vanilla HTML/JS, zero build step) with an end-to-end automation pipeline via n8n — from source ERP to auto-deploy, no manual steps. Demo data only."
+    },
+    "stack": ["Excel", "n8n", "SharePoint", "Netlify", "JavaScript", "HTML"],
+    "links": {
+      "live": "https://andrescultori.github.io/dashboard-financeiro/",
+      "github": "https://github.com/andrescultori/dashboard-financeiro"
+    },
+    "note": {
+      "pt": "Senha de demonstração: demo2026",
+      "en": "Demo password: demo2026"
+    },
+    "commercial": false,
+    "featured": true,
+    "sortOrder": 1
+  },
+  {
+    "slug": "processo-seletivo",
+    "title": "Automação Completa do Processo Seletivo",
+    "cardImage": "img/projects/processo-seletivo/card.svg",
+    "screenshots": [],
+    "description": {
+      "pt": "Sistema com 12 cenários no Make.com automatizando 100% do processo seletivo institucional, do primeiro contato à matrícula. Redução de ~80% nas operações após otimização.",
+      "en": "A system of 12 Make.com scenarios automating 100% of the institution's admissions process, from first contact to enrollment. About 80% reduction in manual operations after optimization."
+    },
+    "stack": ["Make.com", "Kommo CRM", "Tally", "ClickUp", "Excel", "Google Sheets", "OneDrive", "Outlook", "JavaScript"],
+    "links": {
+      "github": "https://github.com/andrescultori/automacao-processoseletivo"
+    },
+    "commercial": false,
+    "featured": true,
+    "sortOrder": 2
+  },
+  {
+    "slug": "strava-dashboard",
+    "title": "Dashboard Esportivo | Strava",
+    "cardImage": "img/projects/strava-dashboard/card.svg",
+    "screenshots": [],
+    "description": {
+      "pt": "Dashboard esportivo com KPIs e gráficos personalizados a partir da API do Strava, via Google Sheets.",
+      "en": "Sports dashboard with custom KPIs and charts built from the Strava API, powered by Google Sheets."
+    },
+    "stack": ["Google Sheets", "Apps Script", "HTML", "Google Query", "API", "GitHub Pages"],
+    "links": {
+      "live": "https://andrescultori.github.io/stravadashboard/",
+      "github": "https://github.com/andrescultori/stravadashboard"
+    },
+    "commercial": true,
+    "featured": true,
+    "sortOrder": 3
+  },
+  {
+    "slug": "brasileirao-tracker",
+    "title": "Tracker Estatístico — Brasileirão Série A",
+    "cardImage": "img/projects/brasileirao-tracker/card.svg",
+    "screenshots": [],
+    "description": {
+      "pt": "Script Google Apps Script que transforma uma planilha Google Sheets num painel automático do Campeonato Brasileiro Série A — calendário, resultados diários, classificação, projeção de pontos e probabilidades de título/Libertadores/rebaixamento via Monte Carlo.",
+      "en": "Google Apps Script that turns a Google Sheet into an automated dashboard for the Brazilian Série A championship — fixtures, daily results, standings, points projection, and title/Libertadores/relegation probabilities via Monte Carlo simulation."
+    },
+    "stack": ["Google Sheets", "Apps Script", "JavaScript", "API"],
+    "links": {
+      "live": "https://docs.google.com/spreadsheets/d/1ZZVtyysMpz62xIB6whuDV7FEAt12zvLaVvxH41BKzh8/edit?gid=1262484430#gid=1262484430",
+      "github": "https://github.com/andrescultori/tabela-brasileirao"
+    },
+    "commercial": false,
+    "featured": false,
+    "sortOrder": 4
+  },
+  {
+    "slug": "teste-vocacional",
+    "title": "Teste Vocacional Interativo",
+    "cardImage": "img/projects/teste-vocacional/card.svg",
+    "screenshots": [],
+    "description": {
+      "pt": "Ferramenta de autoavaliação vocacional com resultado personalizado em tempo real.",
+      "en": "Vocational self-assessment tool with real-time, personalized results."
+    },
+    "stack": ["Lovable", "Supabase"],
+    "links": {
+      "live": "https://testevocacionalum.lovable.app"
+    },
+    "commercial": false,
+    "featured": false,
+    "sortOrder": 5
+  },
+  {
+    "slug": "mapa-mundial-perseguicao",
+    "title": "Mapa Mundial da Perseguição — Portas Abertas",
+    "cardImage": "img/projects/mapa-mundial-perseguicao/card.svg",
+    "screenshots": [],
+    "description": {
+      "pt": "Dashboard interativo com o ranking histórico (2013–2026) da Lista Mundial da Perseguição, da Portas Abertas — mapa-múndi navegável, evolução por país e atualização ao vivo via Google Sheets.",
+      "en": "Interactive dashboard for the World Watch List (2013–2026) by Open Doors — navigable world map, per-country ranking history, and live updates from Google Sheets."
+    },
+    "stack": ["GitHub Pages", "HTML"],
+    "links": {
+      "live": "https://andrescultori.github.io/mapa-mundial-perseguicao/",
+      "github": "https://github.com/andrescultori/mapa-mundial-perseguicao"
+    },
+    "commercial": false,
+    "featured": false,
+    "sortOrder": 6
+  }
+]

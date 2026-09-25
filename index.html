@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>André Scultori | Analista de BI &amp; Automação de Processos</title>
+  <meta name="description" content="Portfólio de André Scultori: projetos de Business Intelligence, automação de processos e integração de sistemas.">
+  <meta property="og:title" content="André Scultori | Analista de BI & Automação de Processos">
+  <meta property="og:description" content="Portfólio de André Scultori: projetos de Business Intelligence, automação de processos e integração de sistemas.">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="img/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="wrap">
+      <a class="brand" href="index.html">
+        <span class="brand-mark">AS</span>
+        André Scultori
+      </a>
+      <nav class="nav-links">
+        <a class="nav-link is-active" href="index.html#projetos" data-i18n="nav_projects">Projetos</a>
+        <a class="nav-link" href="contato.html" data-i18n="nav_contact">Contato</a>
+        <div class="lang-toggle">
+          <button type="button" data-lang="pt">PT</button>
+          <button type="button" data-lang="en">EN</button>
+        </div>
+      </nav>
+    </div>
+  </header>
+
+  <section class="hero">
+    <div class="wrap hero-inner">
+      <div class="hero-photo">
+        <img src="img/profile/andre.jpg" alt="André Scultori" onerror="this.parentElement.innerHTML='';">
+      </div>
+      <div>
+        <span class="eyebrow" data-i18n="hero_eyebrow">Portfólio</span>
+        <h1>André Scultori</h1>
+        <p class="hero-role" data-i18n="hero_role">Analista de BI &amp; Automação de Processos</p>
+        <p class="hero-bio" data-i18n="hero_bio">
+          Mais de 15 anos gerindo processos e pessoas, hoje aplicando isso a dados, automação e integração de sistemas.
+        </p>
+        <div class="hero-actions">
+          <a class="btn btn-ghost-dark" href="https://github.com/andrescultori" target="_blank" rel="noopener">
+            <span data-i18n="hero_github">GitHub</span>
+          </a>
+          <a class="btn btn-ghost-dark" href="#" target="_blank" rel="noopener" id="linkedin-link">
+            <span data-i18n="hero_linkedin">LinkedIn</span>
+          </a>
+          <a class="btn btn-primary" href="contato.html">
+            <span data-i18n="hero_contact">Contato</span>
+          </a>
+        </div>
+      </div>
+    </div>
+    <div class="wrap filter-bar">
+      <span class="filter-label" data-i18n="filter_stack">Stack</span>
+      <div class="chips" id="stack-filter"></div>
+    </div>
+  </section>
+
+  <main>
+    <section class="section" id="projetos">
+      <div class="wrap">
+        <div class="section-head">
+          <h2 data-i18n="projects_title">Projetos</h2>
+          <p data-i18n="projects_subtitle">Seleção de trabalhos em automação, análise de dados e integração de sistemas.</p>
+        </div>
+        <p class="filter-status" id="filter-status" style="display:none;"></p>
+        <div class="grid" id="project-grid"></div>
+        <p class="empty-state" id="empty-state" style="display:none;"></p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <div class="footer-top">
+        <div>
+          <p class="footer-name">André Scultori</p>
+          <p class="footer-tagline" data-i18n="footer_tagline">Analista de BI &amp; Automação de Processos, baseado em Maringá-PR.</p>
+        </div>
+        <div class="footer-links">
+          <div class="footer-col">
+            <h4 data-i18n="footer_nav">Navegação</h4>
+            <ul>
+              <li><a href="index.html#projetos" data-i18n="nav_projects">Projetos</a></li>
+              <li><a href="contato.html" data-i18n="nav_contact">Contato</a></li>
+            </ul>
+          </div>
+          <div class="footer-col">
+            <h4 data-i18n="footer_connect">Conecte-se</h4>
+            <ul>
+              <li><a href="https://github.com/andrescultori" target="_blank" rel="noopener">GitHub</a></li>
+              <li><a href="#" id="linkedin-link-footer" target="_blank" rel="noopener">LinkedIn</a></li>
+              <li><a href="mailto:amscultori@gmail.com">amscultori@gmail.com</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span data-i18n="footer_rights">Todos os direitos reservados.</span>
+        <span>
+          <span data-i18n="footer_credit_by">Desenvolvido por</span>
+          <a href="https://github.com/andrescultori" target="_blank" rel="noopener">André Scultori</a>
+          &nbsp;·&nbsp;© 2026&nbsp;·&nbsp;
+          <a href="https://github.com/andrescultori/portfolio" target="_blank" rel="noopener">GitHub</a>
+        </span>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/i18n.js"></script>
+  <script src="js/social.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>

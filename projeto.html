@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Projeto | André Scultori</title>
+  <link rel="icon" href="img/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="wrap">
+      <a class="brand" href="index.html">
+        <span class="brand-mark">AS</span>
+        André Scultori
+      </a>
+      <nav class="nav-links">
+        <a class="nav-link" href="index.html#projetos" data-i18n="nav_projects">Projetos</a>
+        <a class="nav-link" href="contato.html" data-i18n="nav_contact">Contato</a>
+        <div class="lang-toggle">
+          <button type="button" data-lang="pt">PT</button>
+          <button type="button" data-lang="en">EN</button>
+        </div>
+      </nav>
+    </div>
+  </header>
+
+  <div id="project-app">
+    <section class="project-hero">
+      <div class="wrap">
+        <a class="back-link" href="index.html#projetos">&larr; <span data-i18n="back_home">Voltar aos projetos</span></a>
+        <div class="project-hero-top">
+          <div>
+            <h1 id="project-title"></h1>
+            <div class="tag-row" id="project-tags"></div>
+          </div>
+          <div class="project-actions" id="project-actions"></div>
+        </div>
+        <div class="project-cover" id="project-cover"></div>
+      </div>
+    </section>
+
+    <section class="project-body">
+      <div class="wrap project-layout">
+        <div>
+          <p class="prose" id="project-description"></p>
+          <span class="project-note" id="project-note" style="display:none;"></span>
+
+          <div id="screenshots-section" style="display:none;">
+            <h3 style="margin-top:44px; font-size:18px; font-weight:600;" data-i18n="section_screenshots">Capturas de tela</h3>
+            <div class="shot-grid" id="shot-grid"></div>
+          </div>
+        </div>
+
+        <aside class="side-card">
+          <h4 data-i18n="side_stack">Stack utilizada</h4>
+          <div class="tag-row" id="side-stack"></div>
+          <div class="side-links" id="side-links"></div>
+        </aside>
+      </div>
+    </section>
+  </div>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <div class="footer-bottom" style="border-top:1px solid rgba(244,243,240,.1); padding-top:20px;">
+        <span data-i18n="footer_rights">Todos os direitos reservados.</span>
+        <span>
+          <span data-i18n="footer_credit_by">Desenvolvido por</span>
+          <a href="https://github.com/andrescultori" target="_blank" rel="noopener">André Scultori</a>
+          &nbsp;·&nbsp;© 2026&nbsp;·&nbsp;
+          <a href="https://github.com/andrescultori/portfolio" target="_blank" rel="noopener">GitHub</a>
+        </span>
+      </div>
+    </div>
+  </footer>
+
+  <div class="lightbox" id="lightbox">
+    <button class="lightbox-close" id="lightbox-close" aria-label="Close">&times;</button>
+    <img id="lightbox-img" src="" alt="">
+  </div>
+
+  <script src="js/i18n.js"></script>
+  <script src="js/social.js"></script>
+  <script src="js/project.js"></script>
+</body>
+</html>
