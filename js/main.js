@@ -55,9 +55,15 @@ function escapeHtml(str) {
 function projectCard(project) {
   const lang = getLang();
   const desc = project.description[lang] || project.description.pt || "";
-  const a = document.createElement("a");
-  a.className = "card";
-  a.href = `projeto.html?slug=${encodeURIComponent(project.slug)}`;
+  const detailHref = `projeto.html?slug=${encodeURIComponent(project.slug)}`;
+
+  const card = document.createElement("article");
+  card.className = "card";
+
+  const mediaLink = document.createElement("a");
+  mediaLink.className = "card-media-link";
+  mediaLink.href = detailHref;
+  mediaLink.setAttribute("aria-label", project.title);
 
   const media = document.createElement("div");
   media.className = "card-media";
@@ -72,24 +78,34 @@ function projectCard(project) {
     badge.textContent = t("badge_commercial");
     media.appendChild(badge);
   }
+  mediaLink.appendChild(media);
 
   const body = document.createElement("div");
   body.className = "card-body";
   body.innerHTML = `
-    <h3>${escapeHtml(project.title)}</h3>
+    <a class="card-title-link" href="${detailHref}"><h3>${escapeHtml(project.title)}</h3></a>
     <p>${escapeHtml(desc)}</p>
     <div class="tag-row">
       ${project.stack.map((s) => `<span class="tag">${escapeHtml(s)}</span>`).join("")}
     </div>
     <div class="card-links">
-      ${project.links.live ? `<span>${iconSvg("external")} ${t("link_live")}</span>` : ""}
-      ${project.links.github ? `<span>${iconSvg("github")} ${t("link_github")}</span>` : ""}
+      ${
+        project.links.live
+          ? `<a href="${project.links.live}" target="_blank" rel="noopener">${iconSvg("external")} ${t("link_live")}</a>`
+          : ""
+      }
+      ${
+        project.links.github
+          ? `<a href="${project.links.github}" target="_blank" rel="noopener">${iconSvg("github")} ${t("link_github")}</a>`
+          : ""
+      }
+      <a class="card-more-link" href="${detailHref}">${t("link_more")} &rarr;</a>
     </div>
   `;
 
-  a.appendChild(media);
-  a.appendChild(body);
-  return a;
+  card.appendChild(mediaLink);
+  card.appendChild(body);
+  return card;
 }
 
 function render() {

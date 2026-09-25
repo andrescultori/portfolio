@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin | André Scultori</title>
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="icon" href="img/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="wrap">
+      <a class="brand" href="index.html">
+        <span class="brand-mark">AS</span>
+        André Scultori
+      </a>
+      <nav class="nav-links">
+        <a class="nav-link" href="index.html#projetos">Projetos</a>
+        <button type="button" class="btn btn-ghost-dark btn-sm" id="btn-logout" style="display:none;">Sair</button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="admin-main">
+    <div class="wrap">
+
+      <section id="admin-login" class="admin-card">
+        <h1>Área restrita</h1>
+        <p class="admin-warning">
+          O token fica salvo apenas no seu navegador (localStorage) e é enviado diretamente para
+          api.github.com a cada ação — nunca passa por nenhum servidor terceiro. Ainda assim, use um
+          token com escopo mínimo (Contents: Read and write, restrito a este repositório) e não acesse
+          esta página em computador compartilhado.
+        </p>
+        <form id="login-form">
+          <div class="form-field">
+            <label for="pat">Personal Access Token do GitHub</label>
+            <input type="password" id="pat" name="pat" autocomplete="off" required placeholder="github_pat_...">
+          </div>
+          <button type="submit" class="btn btn-primary">Entrar</button>
+          <p class="form-status" id="login-status"></p>
+        </form>
+      </section>
+
+      <section id="admin-panel" class="admin-panel" style="display:none;">
+        <div class="admin-panel-head">
+          <h1>Projetos</h1>
+          <div class="admin-panel-actions">
+            <button type="button" class="btn btn-primary btn-sm" id="btn-new">Novo projeto</button>
+          </div>
+        </div>
+        <p class="form-status" id="panel-status"></p>
+        <div class="admin-table-wrap">
+          <table class="admin-table" id="projects-table">
+            <thead>
+              <tr>
+                <th>Ordem</th>
+                <th>Título</th>
+                <th>Slug</th>
+                <th>Status</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="projects-tbody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="admin-form-section" class="admin-form-section" style="display:none;">
+        <h2 id="form-title">Novo projeto</h2>
+        <form id="project-form">
+          <div class="admin-form-grid">
+            <div class="form-field">
+              <label for="f-slug">Slug *</label>
+              <input type="text" id="f-slug" placeholder="meu-projeto">
+            </div>
+            <div class="form-field">
+              <label for="f-title">Título *</label>
+              <input type="text" id="f-title">
+            </div>
+
+            <div class="form-field full">
+              <label for="f-cardImage">Imagem do card (caminho)</label>
+              <input type="text" id="f-cardImage" placeholder="img/projects/meu-projeto/card.jpg">
+            </div>
+
+            <div class="form-field full">
+              <label for="f-screenshots">Screenshots (um caminho por linha)</label>
+              <textarea id="f-screenshots" rows="4" placeholder="img/projects/meu-projeto/01.jpg"></textarea>
+            </div>
+
+            <div class="form-field">
+              <label for="f-desc-pt">Descrição (PT)</label>
+              <textarea id="f-desc-pt" rows="4"></textarea>
+            </div>
+            <div class="form-field">
+              <label for="f-desc-en">Descrição (EN)</label>
+              <textarea id="f-desc-en" rows="4"></textarea>
+            </div>
+
+            <div class="form-field full">
+              <label for="f-stack">Stack (separada por vírgula)</label>
+              <input type="text" id="f-stack" placeholder="HTML, CSS, JavaScript">
+            </div>
+
+            <div class="form-field">
+              <label for="f-live">Link "Ver ao vivo"</label>
+              <input type="url" id="f-live" placeholder="https://...">
+            </div>
+            <div class="form-field">
+              <label for="f-github">Link do GitHub</label>
+              <input type="url" id="f-github" placeholder="https://github.com/...">
+            </div>
+
+            <div class="form-field">
+              <label for="f-note-pt">Nota / aviso (PT) — opcional</label>
+              <input type="text" id="f-note-pt">
+            </div>
+            <div class="form-field">
+              <label for="f-note-en">Nota / aviso (EN) — opcional</label>
+              <input type="text" id="f-note-en">
+            </div>
+
+            <div class="form-field">
+              <label for="f-sortOrder">Ordem de exibição</label>
+              <input type="number" id="f-sortOrder" step="1">
+            </div>
+
+            <div class="admin-checks-row">
+              <label class="form-check">
+                <input type="checkbox" id="f-commercial">
+                Produto comercial
+              </label>
+              <label class="form-check">
+                <input type="checkbox" id="f-featured">
+                Destaque (featured)
+              </label>
+              <label class="form-check">
+                <input type="checkbox" id="f-draft">
+                Rascunho (não publicar no site)
+              </label>
+            </div>
+          </div>
+
+          <div class="admin-form-actions">
+            <button type="submit" class="btn btn-primary" id="btn-save">Salvar</button>
+            <button type="button" class="btn btn-ghost-light" id="btn-cancel">Cancelar</button>
+            <p class="form-status" id="form-status-msg" style="margin:0;"></p>
+          </div>
+        </form>
+      </section>
+
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <div class="footer-bottom" style="border-top:1px solid rgba(244,243,240,.1); padding-top:20px;">
+        <span>Todos os direitos reservados.</span>
+        <span>
+          Desenvolvido por
+          <a href="https://github.com/andrescultori" target="_blank" rel="noopener">André Scultori</a>
+          &nbsp;·&nbsp;© 2026&nbsp;·&nbsp;
+          <a href="https://github.com/andrescultori/portfolio" target="_blank" rel="noopener">GitHub</a>
+        </span>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/admin.js"></script>
+</body>
+</html>
