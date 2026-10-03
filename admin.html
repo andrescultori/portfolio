@@ -32,19 +32,23 @@
       <section id="admin-login" class="admin-card">
         <h1>Área restrita</h1>
         <p class="admin-warning">
-          O token fica salvo apenas no seu navegador (localStorage) e é enviado diretamente para
-          api.github.com a cada ação — nunca passa por nenhum servidor terceiro. Ainda assim, use um
-          token com escopo mínimo (Contents: Read and write, restrito a este repositório) e não acesse
-          esta página em computador compartilhado.
+          O login é feito com sua conta GitHub (OAuth via Supabase) — nenhuma senha ou token passa
+          por este site. Só a conta <strong>andrescultori</strong> tem permissão de editar; qualquer
+          outra conta consegue logar, mas não consegue salvar nada.
         </p>
-        <form id="login-form">
-          <div class="form-field">
-            <label for="pat">Personal Access Token do GitHub</label>
-            <input type="password" id="pat" name="pat" autocomplete="off" required placeholder="github_pat_...">
-          </div>
-          <button type="submit" class="btn btn-primary">Entrar</button>
-          <p class="form-status" id="login-status"></p>
-        </form>
+        <button type="button" class="btn btn-primary" id="btn-login-github">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5C5.73.5.98 5.24.98 11.5c0 4.98 3.23 9.2 7.71 10.69.56.1.77-.24.77-.54 0-.27-.01-1.16-.02-2.1-3.14.68-3.8-1.34-3.8-1.34-.51-1.31-1.25-1.66-1.25-1.66-1.02-.7.08-.69.08-.69 1.13.08 1.72 1.16 1.72 1.16 1 1.72 2.63 1.22 3.27.93.1-.73.39-1.22.71-1.5-2.51-.29-5.15-1.26-5.15-5.6 0-1.24.44-2.25 1.16-3.04-.12-.29-.5-1.45.11-3.02 0 0 .95-.3 3.12 1.16a10.8 10.8 0 0 1 5.68 0c2.16-1.46 3.11-1.16 3.11-1.16.62 1.57.23 2.73.11 3.02.73.79 1.16 1.8 1.16 3.04 0 4.35-2.65 5.31-5.17 5.59.4.35.76 1.03.76 2.08 0 1.5-.01 2.71-.01 3.08 0 .3.2.65.78.54A10.52 10.52 0 0 0 23.02 11.5C23.02 5.24 18.27.5 12 .5Z"/></svg>
+          Entrar com GitHub
+        </button>
+        <p class="form-status" id="login-status"></p>
+      </section>
+
+      <section id="admin-forbidden" class="admin-card" style="display:none;">
+        <h1>Sem permissão</h1>
+        <p class="admin-warning">
+          Você logou com uma conta GitHub que não tem permissão de edição neste portfólio.
+        </p>
+        <button type="button" class="btn btn-ghost-light" id="btn-logout-forbidden">Sair e tentar outra conta</button>
       </section>
 
       <section id="admin-panel" class="admin-panel" style="display:none;">
@@ -55,20 +59,7 @@
           </div>
         </div>
         <p class="form-status" id="panel-status"></p>
-        <div class="admin-table-wrap">
-          <table class="admin-table" id="projects-table">
-            <thead>
-              <tr>
-                <th>Ordem</th>
-                <th>Título</th>
-                <th>Slug</th>
-                <th>Status</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody id="projects-tbody"></tbody>
-          </table>
-        </div>
+        <div class="admin-cards" id="projects-cards"></div>
       </section>
 
       <section id="admin-form-section" class="admin-form-section" style="display:none;">
@@ -85,13 +76,27 @@
             </div>
 
             <div class="form-field full">
-              <label for="f-cardImage">Imagem do card (caminho)</label>
-              <input type="text" id="f-cardImage" placeholder="img/projects/meu-projeto/card.jpg">
+              <label for="f-cardImage">Imagem do card</label>
+              <div class="admin-image-row">
+                <input type="text" id="f-cardImage" placeholder="Caminho ou URL da imagem">
+                <label class="btn btn-ghost-light btn-sm admin-upload-btn">
+                  Enviar imagem
+                  <input type="file" id="f-cardImage-upload" accept="image/*" hidden>
+                </label>
+              </div>
+              <p class="form-hint" id="f-cardImage-status"></p>
             </div>
 
             <div class="form-field full">
               <label for="f-screenshots">Screenshots (um caminho por linha)</label>
               <textarea id="f-screenshots" rows="4" placeholder="img/projects/meu-projeto/01.jpg"></textarea>
+              <div class="admin-image-row">
+                <label class="btn btn-ghost-light btn-sm admin-upload-btn">
+                  Adicionar screenshot
+                  <input type="file" id="f-screenshot-upload" accept="image/*" hidden>
+                </label>
+                <p class="form-hint" id="f-screenshot-status"></p>
+              </div>
             </div>
 
             <div class="form-field">
@@ -172,6 +177,8 @@
     </div>
   </footer>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="js/supabase-config.js"></script>
   <script src="js/admin.js"></script>
 </body>
 </html>
