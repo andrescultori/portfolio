@@ -60,29 +60,37 @@ function projectCard(project) {
   const card = document.createElement("article");
   card.className = "card";
 
-  const mediaLink = document.createElement("a");
-  mediaLink.className = "card-media-link";
-  mediaLink.href = detailHref;
-  mediaLink.setAttribute("aria-label", project.title);
+  if (project.cardImage) {
+    const mediaLink = document.createElement("a");
+    mediaLink.className = "card-media-link";
+    mediaLink.href = detailHref;
+    mediaLink.setAttribute("aria-label", project.title);
 
-  const media = document.createElement("div");
-  media.className = "card-media";
-  const img = document.createElement("img");
-  img.src = project.cardImage;
-  img.alt = project.title;
-  img.loading = "lazy";
-  media.appendChild(img);
-  if (project.commercial) {
-    const badge = document.createElement("span");
-    badge.className = "badge-commercial";
-    badge.textContent = t("badge_commercial");
-    media.appendChild(badge);
+    const media = document.createElement("div");
+    media.className = "card-media";
+    const img = document.createElement("img");
+    img.src = project.cardImage;
+    img.alt = project.title;
+    img.loading = "lazy";
+    media.appendChild(img);
+    if (project.commercial) {
+      const badge = document.createElement("span");
+      badge.className = "badge-commercial";
+      badge.textContent = t("badge_commercial");
+      media.appendChild(badge);
+    }
+    mediaLink.appendChild(media);
+    card.appendChild(mediaLink);
   }
-  mediaLink.appendChild(media);
 
   const body = document.createElement("div");
   body.className = "card-body";
   body.innerHTML = `
+    ${
+      !project.cardImage && project.commercial
+        ? `<span class="badge-commercial badge-commercial--inline">${t("badge_commercial")}</span>`
+        : ""
+    }
     <a class="card-title-link" href="${detailHref}"><h3>${escapeHtml(project.title)}</h3></a>
     <p>${escapeHtml(desc)}</p>
     <div class="tag-row">
@@ -103,7 +111,6 @@ function projectCard(project) {
     </div>
   `;
 
-  card.appendChild(mediaLink);
   card.appendChild(body);
   return card;
 }

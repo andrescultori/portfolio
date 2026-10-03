@@ -135,5 +135,96 @@
     "commercial": false,
     "featured": false,
     "sortOrder": 6
+  },
+  {
+    "slug": "timoteo-app",
+    "title": "Timóteo App — Estudo Bíblico Interativo",
+    "cardImage": "",
+    "screenshots": [
+      "img/projects/timoteo-app/01-grade-dos-livros.png",
+      "img/projects/timoteo-app/02-linha-do-tempo.png",
+      "img/projects/timoteo-app/03-mapa.png",
+      "img/projects/timoteo-app/04-personagens.png",
+      "img/projects/timoteo-app/05-mapa-celular.png"
+    ],
+    "description": {
+      "pt": "Tabela interativa dos 66 livros da Bíblia, com ficha de estudo, mapa, linha do tempo e páginas de personagens para cada livro, e o texto em quatro versões de licença aberta — tudo estático (React + Vite), publicado no GitHub Pages.",
+      "en": "Interactive table of the 66 books of the Bible, with a study sheet, a map, a timeline, and people pages for each book, plus the text in four openly licensed versions — fully static (React + Vite), published on GitHub Pages."
+    },
+    "stack": ["React", "Vite", "D3.js", "GitHub Pages"],
+    "links": {
+      "live": "https://andrescultori.github.io/timoteo-app/",
+      "github": "https://github.com/andrescultori/timoteo-app"
+    },
+    "commercial": false,
+    "featured": true,
+    "sortOrder": 7
+  },
+  {
+    "slug": "apuracao-eleicoes",
+    "title": "Apuração 2026 — Resultados Eleitorais em Tempo Real",
+    "cardImage": "",
+    "screenshots": [
+      "img/projects/apuracao-eleicoes/01-presidente.png"
+    ],
+    "description": {
+      "pt": "Dashboard de acompanhamento eleitoral em tempo real para os 5 cargos do pleito, com busca de candidatos favoritos entre estados e uma integração real (não simulada) com o catálogo oficial de resultados do TSE.",
+      "en": "Real-time election-results dashboard covering all 5 races at once, with cross-state favorite-candidate search and a real (not simulated) integration with Brazil's official TSE results catalog."
+    },
+    "stack": ["TypeScript", "Vite", "Vitest", "GitHub Pages"],
+    "links": {
+      "live": "https://andrescultori.github.io/apuracao-eleicoes/",
+      "github": "https://github.com/andrescultori/apuracao-eleicoes"
+    },
+    "note": {
+      "pt": "Projeto independente, sem vínculo com o TSE. O modo padrão usa dados fictícios — não há nada sensível a proteger.",
+      "en": "Independent project, not affiliated with Brazil's TSE. Default mode uses fictional data — nothing sensitive to protect."
+    },
+    "commercial": false,
+    "featured": true,
+    "sortOrder": 8
+  },
+  {
+    "slug": "portal-aluno",
+    "title": "Portal do Aluno — UniMissional",
+    "cardImage": "",
+    "screenshots": [],
+    "description": {
+      "pt": "Portal institucional para a UniMissional com presença via QR Code calculada no servidor, conteúdo (manual, Classroom, calendário) gerenciado por um painel admin, e autenticação Google restrita a uma whitelist — React + Supabase, deploy automático na Vercel.",
+      "en": "Institutional portal for UniMissional with server-computed QR-code attendance, staff-managed content (handbook, Classroom, calendar) through an admin panel, and Google login restricted to a whitelist — React + Supabase, auto-deployed on Vercel."
+    },
+    "stack": ["React", "TypeScript", "Supabase", "Tailwind CSS", "Vercel"],
+    "links": {
+      "live": "https://portal.unimissional.org.br",
+      "github": "https://github.com/andrescultori/portal-aluno"
+    },
+    "note": {
+      "pt": "Acesso ao site ao vivo é restrito à whitelist institucional da UniMissional (login Google).",
+      "en": "Access to the live site is restricted to UniMissional's institutional whitelist (Google login)."
+    },
+    "commercial": true,
+    "featured": true,
+    "sortOrder": 9
+  },
+  {
+    "slug": "js-utils-automation",
+    "title": "JS Utils Automation",
+    "cardImage": "",
+    "screenshots": [],
+    "description": {
+      "pt": "Biblioteca de funções JavaScript utilitárias, sem dependências, extraídas e generalizadas de uma automação real em produção no Make.com (processo institucional de 12 cenários, 10+ ferramentas integradas), cada uma com teste próprio.",
+      "en": "Dependency-free JavaScript utility library, extracted and generalized from a real production Make.com automation (a 12-scenario institutional process integrating 10+ tools), each function with its own test."
+    },
+    "stack": ["JavaScript", "Node.js"],
+    "links": {
+      "github": "https://github.com/andrescultori/js-utils-automation"
+    },
+    "note": {
+      "pt": "Funções extraídas do projeto \"Automação Completa do Processo Seletivo\", generalizadas para uso em qualquer projeto JavaScript.",
+      "en": "Functions extracted from the \"Automação Completa do Processo Seletivo\" project, generalized for use in any JavaScript project."
+    },
+    "commercial": false,
+    "featured": false,
+    "sortOrder": 10
   }
 ]

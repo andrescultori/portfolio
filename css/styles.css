@@ -435,6 +435,7 @@ p {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 24px;
+  align-items: start;
 }
 
 .card {
@@ -500,6 +501,13 @@ p {
   height: 6px;
   border-radius: 50%;
   background: var(--commercial);
+}
+
+.badge-commercial--inline {
+  position: static;
+  top: auto;
+  left: auto;
+  margin-bottom: 12px;
 }
 
 .card-body {
