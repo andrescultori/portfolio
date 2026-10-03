@@ -139,7 +139,7 @@
   {
     "slug": "timoteo-app",
     "title": "Timóteo App — Estudo Bíblico Interativo",
-    "cardImage": "img/projects/timoteo-app/card.svg",
+    "cardImage": "",
     "screenshots": [
       "img/projects/timoteo-app/01-grade-dos-livros.png",
       "img/projects/timoteo-app/02-linha-do-tempo.png",
@@ -163,7 +163,7 @@
   {
     "slug": "apuracao-eleicoes",
     "title": "Apuração 2026 — Resultados Eleitorais em Tempo Real",
-    "cardImage": "img/projects/apuracao-eleicoes/card.svg",
+    "cardImage": "",
     "screenshots": [
       "img/projects/apuracao-eleicoes/01-presidente.png"
     ],
@@ -187,7 +187,7 @@
   {
     "slug": "portal-aluno",
     "title": "Portal do Aluno — UniMissional",
-    "cardImage": "img/projects/portal-aluno/card.svg",
+    "cardImage": "",
     "screenshots": [],
     "description": {
       "pt": "Portal institucional para a UniMissional com presença via QR Code calculada no servidor, conteúdo (manual, Classroom, calendário) gerenciado por um painel admin, e autenticação Google restrita a uma whitelist — React + Supabase, deploy automático na Vercel.",
@@ -209,7 +209,7 @@
   {
     "slug": "js-utils-automation",
     "title": "JS Utils Automation",
-    "cardImage": "img/projects/js-utils-automation/card.svg",
+    "cardImage": "",
     "screenshots": [],
     "description": {
       "pt": "Biblioteca de funções JavaScript utilitárias, sem dependências, extraídas e generalizadas de uma automação real em produção no Make.com (processo institucional de 12 cenários, 10+ ferramentas integradas), cada uma com teste próprio.",

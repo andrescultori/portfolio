@@ -49,7 +49,13 @@ function renderProject(project) {
   }
 
   const cover = document.getElementById("project-cover");
-  cover.innerHTML = `<img src="${project.cardImage}" alt="${escapeHtmlP(project.title)}">`;
+  if (project.cardImage) {
+    cover.style.display = "";
+    cover.innerHTML = `<img src="${project.cardImage}" alt="${escapeHtmlP(project.title)}">`;
+  } else {
+    cover.style.display = "none";
+    cover.innerHTML = "";
+  }
 
   document.getElementById("project-description").textContent = desc;
 
