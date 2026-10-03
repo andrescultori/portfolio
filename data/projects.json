@@ -2,7 +2,7 @@
   {
     "slug": "lgnd-checklist",
     "title": "Legendários — Checklist de Equipamentos",
-    "cardImage": "img/projects/lgnd-checklist/02-checklist-ataque.jpg",
+    "cardImage": "",
     "screenshots": [
       "img/projects/lgnd-checklist/01-login.jpg",
       "img/projects/lgnd-checklist/02-checklist-ataque.jpg",
@@ -29,7 +29,7 @@
   {
     "slug": "dashboard-financeiro",
     "title": "Dashboard Financeiro",
-    "cardImage": "img/projects/dashboard-financeiro/card.svg",
+    "cardImage": "",
     "screenshots": [],
     "description": {
       "pt": "Dashboard financeiro interativo (HTML/JS puro, sem framework) com pipeline de automação ponta a ponta via n8n — do ERP até a publicação, sem intervenção manual. Dados fictícios para demonstração.",
@@ -51,7 +51,7 @@
   {
     "slug": "processo-seletivo",
     "title": "Automação Completa do Processo Seletivo",
-    "cardImage": "img/projects/processo-seletivo/card.svg",
+    "cardImage": "",
     "screenshots": [],
     "description": {
       "pt": "Sistema com 12 cenários no Make.com automatizando 100% do processo seletivo institucional, do primeiro contato à matrícula. Redução de ~80% nas operações após otimização.",
@@ -68,7 +68,7 @@
   {
     "slug": "strava-dashboard",
     "title": "Dashboard Esportivo | Strava",
-    "cardImage": "img/projects/strava-dashboard/card.svg",
+    "cardImage": "",
     "screenshots": [],
     "description": {
       "pt": "Dashboard esportivo com KPIs e gráficos personalizados a partir da API do Strava, via Google Sheets.",
@@ -86,7 +86,7 @@
   {
     "slug": "brasileirao-tracker",
     "title": "Tracker Estatístico — Brasileirão Série A",
-    "cardImage": "img/projects/brasileirao-tracker/card.svg",
+    "cardImage": "",
     "screenshots": [],
     "description": {
       "pt": "Script Google Apps Script que transforma uma planilha Google Sheets num painel automático do Campeonato Brasileiro Série A — calendário, resultados diários, classificação, projeção de pontos e probabilidades de título/Libertadores/rebaixamento via Monte Carlo.",
@@ -104,7 +104,7 @@
   {
     "slug": "teste-vocacional",
     "title": "Teste Vocacional Interativo",
-    "cardImage": "img/projects/teste-vocacional/card.svg",
+    "cardImage": "",
     "screenshots": [],
     "description": {
       "pt": "Ferramenta de autoavaliação vocacional com resultado personalizado em tempo real.",
@@ -121,7 +121,7 @@
   {
     "slug": "mapa-mundial-perseguicao",
     "title": "Mapa Mundial da Perseguição — Portas Abertas",
-    "cardImage": "img/projects/mapa-mundial-perseguicao/card.svg",
+    "cardImage": "",
     "screenshots": [],
     "description": {
       "pt": "Dashboard interativo com o ranking histórico (2013–2026) da Lista Mundial da Perseguição, da Portas Abertas — mapa-múndi navegável, evolução por país e atualização ao vivo via Google Sheets.",
