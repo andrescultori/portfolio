@@ -154,9 +154,7 @@ function render() {
 async function init() {
   initLangToggle(() => render());
   try {
-    const res = await fetch("data/projects.json", { cache: "no-store" });
-    const data = await res.json();
-    ALL_PROJECTS = data.filter((p) => !p.draft);
+    ALL_PROJECTS = await fetchProjects();
   } catch (e) {
     ALL_PROJECTS = [];
   }

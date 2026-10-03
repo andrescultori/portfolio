@@ -123,9 +123,8 @@ async function initProjectPage() {
   });
 
   try {
-    const res = await fetch("data/projects.json", { cache: "no-store" });
-    const data = await res.json();
-    CURRENT_PROJECT = data.find((p) => p.slug === slug && !p.draft);
+    const all = await fetchProjects();
+    CURRENT_PROJECT = all.find((p) => p.slug === slug) || null;
   } catch (e) {
     CURRENT_PROJECT = null;
   }
