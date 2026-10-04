@@ -53,6 +53,7 @@
             <button type="button" class="btn btn-primary btn-sm" id="btn-new">Novo projeto</button>
           </div>
         </div>
+        <p class="form-hint">Arraste pela alça <strong>⠿</strong> pra reordenar.</p>
         <p class="form-status" id="panel-status"></p>
         <div class="admin-cards" id="projects-cards"></div>
       </section>
@@ -126,11 +127,6 @@
               <input type="text" id="f-note-en">
             </div>
 
-            <div class="form-field">
-              <label for="f-sortOrder">Ordem de exibição</label>
-              <input type="number" id="f-sortOrder" step="1">
-            </div>
-
             <div class="admin-checks-row">
               <label class="form-check">
                 <input type="checkbox" id="f-commercial">
@@ -173,6 +169,7 @@
   </footer>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.2/Sortable.min.js"></script>
   <script src="js/supabase-config.js"></script>
   <script src="js/admin.js"></script>
 </body>

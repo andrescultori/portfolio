@@ -108,6 +108,7 @@ async function loadProjects() {
   PROJECTS = data.map(mapRowToProject);
   setStatus(panelStatus, "", "");
   renderCards();
+  initSortable();
 }
 
 function renderCards() {
@@ -127,8 +128,10 @@ function renderCards() {
 
     const card = document.createElement("article");
     card.className = "admin-project-card";
+    card.dataset.slug = p.slug;
     card.innerHTML = `
       <div class="admin-project-card-head">
+        <span class="admin-drag-handle" aria-label="Arrastar para reordenar">⠿</span>
         <span class="admin-project-order">#${escapeHtml(p.sortOrder)}</span>
         <div class="admin-project-badges">${badges.map((b) => `<span class="admin-badge">${b}</span>`).join("")}</div>
       </div>
@@ -143,6 +146,52 @@ function renderCards() {
     card.querySelector('[data-action="delete"]').addEventListener("click", () => deleteProject(p.slug));
     wrap.appendChild(card);
   });
+}
+
+let SORTABLE_INSTANCE = null;
+
+function initSortable() {
+  if (typeof Sortable === "undefined") return; // drag-to-reorder unavailable if the CDN failed; list still works
+  if (SORTABLE_INSTANCE) {
+    SORTABLE_INSTANCE.destroy();
+    SORTABLE_INSTANCE = null;
+  }
+  const wrap = document.getElementById("projects-cards");
+  if (!wrap || PROJECTS.length === 0) return;
+
+  SORTABLE_INSTANCE = new Sortable(wrap, {
+    animation: 150,
+    handle: ".admin-drag-handle",
+    ghostClass: "admin-project-card--ghost",
+    onEnd: handleReorder,
+  });
+}
+
+async function handleReorder(evt) {
+  const { oldIndex, newIndex } = evt;
+  if (oldIndex === newIndex) return;
+
+  const moved = PROJECTS.splice(oldIndex, 1)[0];
+  PROJECTS.splice(newIndex, 0, moved);
+
+  const statusEl = document.getElementById("panel-status");
+  setStatus(statusEl, "Salvando nova ordem…", "");
+
+  try {
+    await Promise.all(
+      PROJECTS.map((p, i) => {
+        if (p.sortOrder === i) return null;
+        p.sortOrder = i;
+        return supabaseClient.from("portfolio_projects").update({ sort_order: i }).eq("slug", p.slug);
+      })
+    );
+    setStatus(statusEl, "Ordem salva!", "ok");
+    renderCards();
+    initSortable();
+  } catch (err) {
+    setStatus(statusEl, `Erro ao salvar a nova ordem: ${err.message}`, "err");
+    await loadProjects();
+  }
 }
 
 function nextSortOrder() {
@@ -171,7 +220,6 @@ function openForm(slug) {
   document.getElementById("f-github").value = p && p.links ? p.links.github || "" : "";
   document.getElementById("f-note-pt").value = p && p.note ? p.note.pt || "" : "";
   document.getElementById("f-note-en").value = p && p.note ? p.note.en || "" : "";
-  document.getElementById("f-sortOrder").value = p ? p.sortOrder ?? 0 : nextSortOrder();
   document.getElementById("f-commercial").checked = !!(p && p.commercial);
   document.getElementById("f-featured").checked = !!(p && p.featured);
   document.getElementById("f-draft").checked = !!(p && p.draft);
@@ -251,7 +299,7 @@ async function handleFormSubmit(e) {
   const github = document.getElementById("f-github").value.trim();
   const notePt = document.getElementById("f-note-pt").value.trim();
   const noteEn = document.getElementById("f-note-en").value.trim();
-  const sortOrderRaw = document.getElementById("f-sortOrder").value;
+  const existing = EDITING_SLUG === null ? null : PROJECTS.find((p) => p.slug === EDITING_SLUG);
 
   const project = {
     slug,
@@ -267,7 +315,7 @@ async function handleFormSubmit(e) {
     note: null,
     commercial: document.getElementById("f-commercial").checked,
     featured: document.getElementById("f-featured").checked,
-    sortOrder: sortOrderRaw === "" ? 0 : Number(sortOrderRaw),
+    sortOrder: existing ? existing.sortOrder : nextSortOrder(),
     draft: document.getElementById("f-draft").checked,
   };
   if (live) project.links.live = live;
