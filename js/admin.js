@@ -75,18 +75,23 @@ function projectToRow(project) {
 }
 
 async function checkAuthAndRoute() {
-  const { data: { session } } = await supabaseClient.auth.getSession();
-  if (!session) {
+  try {
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (!session) {
+      showAuthState("login");
+      return;
+    }
+    const { data: isAdmin, error } = await supabaseClient.rpc("is_portfolio_admin");
+    if (error || !isAdmin) {
+      showAuthState("forbidden");
+      return;
+    }
+    showAuthState("authorized");
+    await loadProjects();
+  } catch (err) {
     showAuthState("login");
-    return;
+    setStatus(document.getElementById("login-status"), `Erro ao verificar sessão: ${err.message}`, "err");
   }
-  const { data: isAdmin, error } = await supabaseClient.rpc("is_portfolio_admin");
-  if (error || !isAdmin) {
-    showAuthState("forbidden");
-    return;
-  }
-  showAuthState("authorized");
-  await loadProjects();
 }
 
 async function loadProjects() {
@@ -309,13 +314,17 @@ async function deleteProject(slug) {
 
 async function handleLoginClick() {
   const statusEl = document.getElementById("login-status");
-  setStatus(statusEl, "Redirecionando pro GitHub…", "");
-  const redirectTo = window.location.origin + window.location.pathname;
-  const { error } = await supabaseClient.auth.signInWithOAuth({
-    provider: "github",
-    options: { redirectTo },
-  });
-  if (error) setStatus(statusEl, `Erro ao iniciar login: ${error.message}`, "err");
+  try {
+    setStatus(statusEl, "Redirecionando pro GitHub…", "");
+    const redirectTo = window.location.origin + window.location.pathname;
+    const { error } = await supabaseClient.auth.signInWithOAuth({
+      provider: "github",
+      options: { redirectTo },
+    });
+    if (error) setStatus(statusEl, `Erro ao iniciar login: ${error.message}`, "err");
+  } catch (err) {
+    setStatus(statusEl, `Erro inesperado ao iniciar login: ${err.message}`, "err");
+  }
 }
 
 async function logout() {
@@ -334,23 +343,28 @@ function bindEvents() {
 }
 
 async function init() {
-  if (typeof window.supabase === "undefined" || typeof window.supabase.createClient !== "function") {
-    setStatus(
-      document.getElementById("login-status"),
-      "Não foi possível carregar a biblioteca do Supabase. Verifique sua conexão e recarregue a página.",
-      "err"
-    );
-    return;
-  }
-
-  supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
-  bindEvents();
-  supabaseClient.auth.onAuthStateChange((event) => {
-    if (event === "SIGNED_IN" || event === "SIGNED_OUT" || event === "TOKEN_REFRESHED") {
-      checkAuthAndRoute();
+  const loginStatus = document.getElementById("login-status");
+  try {
+    if (typeof window.supabase === "undefined" || typeof window.supabase.createClient !== "function") {
+      setStatus(
+        loginStatus,
+        "Não foi possível carregar a biblioteca do Supabase. Verifique sua conexão e recarregue a página.",
+        "err"
+      );
+      return;
     }
-  });
-  await checkAuthAndRoute();
+
+    supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+    bindEvents();
+    supabaseClient.auth.onAuthStateChange((event) => {
+      if (event === "SIGNED_IN" || event === "SIGNED_OUT" || event === "TOKEN_REFRESHED") {
+        checkAuthAndRoute();
+      }
+    });
+    await checkAuthAndRoute();
+  } catch (err) {
+    setStatus(loginStatus, `Erro inesperado ao carregar a página: ${err.message}`, "err");
+  }
 }
 
 document.addEventListener("DOMContentLoaded", init);
