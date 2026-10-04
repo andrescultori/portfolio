@@ -4,7 +4,7 @@
 
 **Showcase of my BI, automation and systems-integration projects, with its own admin panel to edit everything without an IDE or a manual redeploy.**
 
-Static site (vanilla HTML/CSS/JS, no build step) published via GitHub Pages at **https://andrescultori.github.io/portfolio/**, with content (projects, descriptions, images) served live from a Supabase database and editable through an admin panel authenticated with my own GitHub account.
+Static site (vanilla HTML/CSS/JS, no build step) published via Vercel at **https://andrescultori.vercel.app/**, with content (projects, descriptions, images) served live from a Supabase database and editable through an admin panel authenticated with my own GitHub account.
 
 ## Structure
 
@@ -61,7 +61,7 @@ Content lives in a Supabase project shared with other apps of mine, with every t
 | Layer | Technology |
 |---|---|
 | UI | Plain HTML, CSS, JavaScript (no framework, no build step) |
-| Hosting | GitHub Pages |
+| Hosting | Vercel |
 | Data + Auth + Storage | Supabase (Postgres, Auth, Storage) |
 | Admin login | GitHub OAuth (via Supabase Auth) |
 | Admin reordering | Sortable.js |

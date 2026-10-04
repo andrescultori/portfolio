@@ -4,7 +4,7 @@
 
 **Vitrine dos meus projetos de BI, automação e integração de sistemas, com um painel de administração próprio pra editar tudo sem depender de IDE nem de redeploy manual.**
 
-Site estático (HTML/CSS/JS puro, sem build) publicado via GitHub Pages em **https://andrescultori.github.io/portfolio/**, com o conteúdo (projetos, descrições, imagens) servido ao vivo por um banco Supabase e editável por um painel admin autenticado com a minha conta GitHub.
+Site estático (HTML/CSS/JS puro, sem build) publicado via Vercel em **https://andrescultori.vercel.app/**, com o conteúdo (projetos, descrições, imagens) servido ao vivo por um banco Supabase e editável por um painel admin autenticado com a minha conta GitHub.
 
 ## Estrutura
 
@@ -61,7 +61,7 @@ O conteúdo vive num projeto Supabase compartilhado com outros apps meus, com to
 | Camada | Tecnologia |
 |---|---|
 | Interface | HTML, CSS, JavaScript puro (sem framework, sem build) |
-| Hospedagem | GitHub Pages |
+| Hospedagem | Vercel |
 | Dados + Auth + Storage | Supabase (Postgres, Auth, Storage) |
 | Login do admin | GitHub OAuth (via Supabase Auth) |
 | Reordenação no admin | Sortable.js |
