@@ -12,11 +12,12 @@ import { resetDist, copySiteFiles } from "./lib/copy.mjs";
 import { renderCardHtml, renderNoscriptList } from "./lib/render-card.mjs";
 import { renderProjectPage } from "./lib/render-project-page.mjs";
 import { buildSitemap, buildRobotsTxt, buildPersonJsonLd } from "./lib/seo.mjs";
+import { resolveSiteUrl } from "./lib/site-url.mjs";
+import { safeJsonLd } from "./lib/html.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.join(__dirname, "..");
 const DIST = path.join(ROOT, "dist");
-const SITE_URL = (process.env.SITE_URL || "https://andrescultori.vercel.app").replace(/\/+$/, "");
 
 const INCLUDE = ["index.html", "projeto.html", "contato.html", "admin.html", "css", "js", "img", "data"];
 
@@ -29,6 +30,15 @@ function log(msg) {
 
 async function main() {
   const warnings = [];
+
+  const { url: rawSiteUrl, source: siteUrlSource } = resolveSiteUrl(process.env);
+  const SITE_URL = rawSiteUrl.replace(/\/+$/, "");
+  log(`SITE_URL: ${SITE_URL} (fonte: ${siteUrlSource})`);
+  if (siteUrlSource === "default") {
+    warnings.push(
+      `SITE_URL/CF_PAGES_URL não configurados — usando o padrão fixo ${SITE_URL}. Configure SITE_URL para o domínio real de produção.`
+    );
+  }
 
   const supabaseConfigPath = path.join(ROOT, "js", "supabase-config.js");
   const socialPath = path.join(ROOT, "js", "social.js");
@@ -138,7 +148,7 @@ async function main() {
   const personJsonLd = buildPersonJsonLd({ siteUrl: SITE_URL, social });
   const headExtra = `  <link rel="canonical" href="${SITE_URL}/">
   <meta property="og:url" content="${SITE_URL}/">
-  <script type="application/ld+json">${JSON.stringify(personJsonLd)}</script>
+  <script type="application/ld+json">${safeJsonLd(personJsonLd)}</script>
 </head>`;
   indexHtml = indexHtml.replace("</head>", headExtra);
   warnings.push("Home: og:image omitido — img/profile/andre.jpg ainda não existe (ver README > Configuração pendente).");
