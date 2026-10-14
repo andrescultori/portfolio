@@ -46,6 +46,18 @@ Changes show up on the live site immediately — no `git push`, no redeploy.
 
 This file is only read when the site can't reach Supabase. Editing it manually **does not update the live site while Supabase is up** — Supabase remains the actual source of truth. It's only useful as a safety net, or to rebuild the data from scratch if ever needed.
 
+## Build and deploy
+
+Vercel builds the site on every push with `npm run build` (`scripts/build.mjs`), which generates a **prerendered** version in `dist/` — real HTML (home, each project page, sitemap, robots.txt) that doesn't depend on JavaScript running in the browser. This exists so crawlers, link previews (LinkedIn, etc.) and recruiting ATS systems see the real content, since the interactive UI (stack filter, PT/EN toggle) stays fully client-side and unchanged.
+
+- **Build-time data source**: tries Supabase first (same table and filter the site uses at runtime); on failure (network, HTTP error, invalid JSON, 10s timeout) or an empty result, it falls back to `data/projects.json`. Drafts (`draft: true`) are always discarded, even if Supabase returns one.
+- **`PRERENDER_SOURCE=json`**: forces the build to skip Supabase and use only `data/projects.json` — useful for tests and fully offline/deterministic builds.
+- **`SUPABASE_URL` / `SUPABASE_ANON_KEY`**: override the values read from `js/supabase-config.js`, if you need to point at a different project (e.g. CI).
+- The static HTML only reflects Supabase as of build time — an edit made in the admin panel won't show up in the prerendered HTML until the next deploy. The *dynamic* content (what a visitor sees once JS loads) stays live as it does today.
+- To auto-rebuild after editing in the admin, you could wire up a [Vercel Deploy Hook](https://vercel.com/docs/deployments/deploy-hooks) and call it from `admin.js` after saving — not implemented yet.
+
+Local commands: `npm run build` (generates `dist/`) and `npm test` (build tests, no network).
+
 ## Backend (Supabase)
 
 Content lives in a Supabase project shared with other apps of mine, with every table and function prefixed with `portfolio_` so nothing collides. Full details — schema, RLS policies, the image storage bucket and the Auth Hook that restricts sign-in to my own GitHub account — are documented in [`supabase/schema.sql`](supabase/schema.sql).

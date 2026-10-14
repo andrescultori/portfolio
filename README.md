@@ -46,6 +46,18 @@ Qualquer mudança aparece no site na hora — não precisa de `git push` nem de 
 
 Esse arquivo só é lido quando o site não consegue falar com o Supabase. Editá-lo manualmente **não atualiza o site enquanto o Supabase estiver no ar** — ele continua sendo a fonte real. Útil só como rede de segurança ou pra reconstruir os dados do zero se precisar.
 
+## Build e deploy
+
+A Vercel builda o site a cada push com `npm run build` (`scripts/build.mjs`), que gera uma versão **pré-renderizada** em `dist/` — HTML de verdade (home, cada projeto, sitemap, robots.txt), não dependente de JavaScript rodar no navegador. Isso existe para que crawlers, a prévia de links (LinkedIn etc.) e ATS de recrutamento vejam o conteúdo real, já que a interface interativa (filtro por stack, troca PT/EN) continua 100% client-side e inalterada.
+
+- **Fonte dos dados no build**: primeiro tenta o Supabase (mesma tabela e filtro que o site usa em runtime); se falhar (rede, erro HTTP, JSON inválido, timeout de 10s) ou vier vazio, cai para `data/projects.json`. Rascunhos (`draft: true`) são sempre descartados, mesmo que o Supabase devolva algum.
+- **`PRERENDER_SOURCE=json`**: força o build a ignorar o Supabase e usar só `data/projects.json` — útil para testes e builds 100% offline/determinísticos.
+- **`SUPABASE_URL` / `SUPABASE_ANON_KEY`**: sobrescrevem os valores lidos de `js/supabase-config.js`, se precisar apontar para outro projeto (ex.: CI).
+- O HTML estático só reflete o Supabase no momento do build — uma edição feita no painel admin não aparece no HTML pré-renderizado até o próximo deploy. O conteúdo *dinâmico* (o que o visitante vê depois que o JS carrega) continua sempre ao vivo, como hoje.
+- Para rebuildar automaticamente depois de editar no admin, dá pra configurar um [Deploy Hook da Vercel](https://vercel.com/docs/deployments/deploy-hooks) e chamá-lo pelo próprio `admin.js` após salvar — não implementado ainda.
+
+Comandos locais: `npm run build` (gera `dist/`) e `npm test` (testes do build, sem rede).
+
 ## Backend (Supabase)
 
 O conteúdo vive num projeto Supabase compartilhado com outros apps meus, com todas as tabelas/funções prefixadas com `portfolio_` pra não colidir com nada. Detalhes completos — schema, políticas de RLS, bucket de imagens e o Auth Hook que restringe o login só à minha conta GitHub — estão documentados em [`supabase/schema.sql`](supabase/schema.sql).
