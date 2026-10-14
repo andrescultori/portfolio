@@ -4,7 +4,7 @@
 
 **Vitrine dos meus projetos de BI, automação e integração de sistemas, com um painel de administração próprio pra editar tudo sem depender de IDE nem de redeploy manual.**
 
-Site estático (HTML/CSS/JS puro, sem build) publicado via Vercel em **https://andrescultori.vercel.app/**, com o conteúdo (projetos, descrições, imagens) servido ao vivo por um banco Supabase e editável por um painel admin autenticado com a minha conta GitHub.
+Site estático (HTML/CSS/JS puro, sem build) publicado via Cloudflare Pages em **https://andrescultori.pages.dev/**, com o conteúdo (projetos, descrições, imagens) servido ao vivo por um banco Supabase e editável por um painel admin autenticado com a minha conta GitHub.
 
 ## Estrutura
 
@@ -58,14 +58,14 @@ Esse arquivo só é lido quando o site não consegue falar com o Supabase. Edit�
 
 ## Build e deploy
 
-A Vercel builda o site a cada push com `npm run build` (`scripts/build.mjs`), que gera uma versão **pré-renderizada** em `dist/` — HTML de verdade (home, cada projeto, sitemap, robots.txt), não dependente de JavaScript rodar no navegador. Isso existe para que crawlers, a prévia de links (LinkedIn etc.) e ATS de recrutamento vejam o conteúdo real, já que a interface interativa (filtro por stack, troca PT/EN) continua 100% client-side e inalterada.
+O Cloudflare Pages builda o site a cada push com `npm run build` (`scripts/build.mjs`, build command/output directory configurados no painel do Cloudflare Pages: `npm run build` / `dist`), que gera uma versão **pré-renderizada** em `dist/` — HTML de verdade (home, cada projeto, sitemap, robots.txt), não dependente de JavaScript rodar no navegador. Isso existe para que crawlers, a prévia de links (LinkedIn etc.) e ATS de recrutamento vejam o conteúdo real, já que a interface interativa (filtro por stack, troca PT/EN) continua 100% client-side e inalterada.
 
 - **Fonte dos dados no build**: primeiro tenta o Supabase (mesma tabela e filtro que o site usa em runtime); se falhar (rede, erro HTTP, JSON inválido, timeout de 10s) ou vier vazio, cai para `data/projects.json`. Rascunhos (`draft: true`) são sempre descartados, mesmo que o Supabase devolva algum.
 - O mesmo vale para as configurações da aba "Site" (`portfolio_site_settings`): se o Supabase não responder, o build usa os valores padrão já embutidos no código (não há um JSON de fallback separado para isso).
 - **`PRERENDER_SOURCE=json`**: força o build a ignorar o Supabase e usar só `data/projects.json` — útil para testes e builds 100% offline/determinísticos.
 - **`SUPABASE_URL` / `SUPABASE_ANON_KEY`**: sobrescrevem os valores lidos de `js/supabase-config.js`, se precisar apontar para outro projeto (ex.: CI).
 - O HTML estático só reflete o Supabase no momento do build — uma edição feita no painel admin não aparece no HTML pré-renderizado até o próximo deploy. O conteúdo *dinâmico* (o que o visitante vê depois que o JS carrega) continua sempre ao vivo, como hoje.
-- Para rebuildar automaticamente depois de editar no admin, dá pra configurar um [Deploy Hook da Vercel](https://vercel.com/docs/deployments/deploy-hooks) e chamá-lo pelo próprio `admin.js` após salvar — não implementado ainda.
+- Para rebuildar automaticamente depois de editar no admin, dá pra configurar um [Deploy Hook do Cloudflare Pages](https://developers.cloudflare.com/pages/configuration/deploy-hooks/) e chamá-lo pelo próprio `admin.js` após salvar — não implementado ainda.
 
 Comandos locais: `npm run build` (gera `dist/`) e `npm test` (testes do build, sem rede).
 
@@ -84,7 +84,7 @@ O conteúdo vive num projeto Supabase compartilhado com outros apps meus, com to
 | Camada | Tecnologia |
 |---|---|
 | Interface | HTML, CSS, JavaScript puro (sem framework, sem build) |
-| Hospedagem | Vercel |
+| Hospedagem | Cloudflare Pages |
 | Dados + Auth + Storage | Supabase (Postgres, Auth, Storage) |
 | Login do admin | GitHub OAuth (via Supabase Auth) |
 | Reordenação no admin | Sortable.js |
