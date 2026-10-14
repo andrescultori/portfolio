@@ -1,0 +1,19 @@
+[
+  {
+    "slug": "fixture-project",
+    "title": "Fixture Project",
+    "cardImage": "",
+    "screenshots": [],
+    "description": {
+      "pt": "Projeto de teste para a suíte do build.",
+      "en": "Test project for the build test suite."
+    },
+    "stack": ["Node.js"],
+    "links": {
+      "github": "https://github.com/andrescultori/fixture-project"
+    },
+    "commercial": false,
+    "featured": false,
+    "sortOrder": 0
+  }
+]
