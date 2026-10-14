@@ -1,4 +1,4 @@
-import { escapeHtml } from "./html.mjs";
+import { escapeHtml, safeJsonLd } from "./html.mjs";
 
 /* Standalone static page for dist/projeto/<slug>/index.html. Mirrors the
    header/nav/footer chrome and the #project-title/#project-tags/etc. DOM
@@ -135,7 +135,7 @@ export function renderProjectPage({ project, siteUrl, pageUrl, social }) {
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../../css/styles.css">
-  <script type="application/ld+json">${JSON.stringify(jsonLd)}</script>
+  <script type="application/ld+json">${safeJsonLd(jsonLd)}</script>
   ${slugShim}
 </head>
 <body>

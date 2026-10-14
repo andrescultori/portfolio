@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 
-import { escapeHtml } from "../scripts/lib/html.mjs";
+import { escapeHtml, safeJsonLd } from "../scripts/lib/html.mjs";
 import { isValidUrl, validateProject, BuildValidationError } from "../scripts/lib/validate.mjs";
 import { slugify } from "../scripts/lib/slug.mjs";
 import { getProjects } from "../scripts/lib/data.mjs";
@@ -12,6 +12,7 @@ import { mapSupabaseRow } from "../scripts/lib/supabase-source.mjs";
 import { renderProjectPage } from "../scripts/lib/render-project-page.mjs";
 import { renderCardHtml, renderNoscriptList } from "../scripts/lib/render-card.mjs";
 import { buildSitemap, buildRobotsTxt } from "../scripts/lib/seo.mjs";
+import { resolveSiteUrl } from "../scripts/lib/site-url.mjs";
 
 const FIXTURE_JSON = path.join(path.dirname(fileURLToPath(import.meta.url)), "fixtures", "projects.json");
 
@@ -281,4 +282,60 @@ test("buildSitemap wraps URLs in a valid urlset", () => {
 test("buildRobotsTxt points to the sitemap", () => {
   const txt = buildRobotsTxt("https://example.com");
   assert.match(txt, /Sitemap: https:\/\/example\.com\/sitemap\.xml/);
+});
+
+// --- safeJsonLd --------------------------------------------------------------
+
+test("safeJsonLd escapes <, U+2028 and U+2029 while staying valid JSON", () => {
+  const value = { text: "a</script>b c d" };
+  const out = safeJsonLd(value);
+  assert.ok(!out.includes("</script>"));
+  assert.ok(!out.includes(" "));
+  assert.ok(!out.includes(" "));
+  const parsed = JSON.parse(out);
+  assert.equal(parsed.text, "a</script>b c d");
+});
+
+test("renderProjectPage neutralizes a script-breakout title in both HTML and JSON-LD", () => {
+  const malicious = "Demo</script><img src=x onerror=alert(1)>";
+  const project = {
+    slug: "xss-demo",
+    title: malicious,
+    cardImage: "",
+    screenshots: [],
+    description: { pt: "Descrição.", en: "Description." },
+    stack: [],
+    links: {},
+    note: null,
+  };
+  const { html } = renderProjectPage({
+    project,
+    siteUrl: "https://andrescultori.vercel.app",
+    pageUrl: "https://andrescultori.vercel.app/projeto/xss-demo/",
+    social: {},
+  });
+
+  assert.ok(!html.includes(malicious), "o título malicioso não deve aparecer cru em lugar nenhum do HTML");
+
+  const match = html.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/);
+  assert.ok(match, "deve haver um bloco JSON-LD");
+  const parsed = JSON.parse(match[1]);
+  assert.equal(parsed.name, malicious, "o JSON-LD deve continuar válido e preservar o valor original ao ser lido de volta");
+});
+
+// --- resolveSiteUrl ------------------------------------------------------------
+
+test("resolveSiteUrl prioritizes SITE_URL, then CF_PAGES_URL, then the default", () => {
+  assert.deepEqual(resolveSiteUrl({ SITE_URL: "https://a.example", CF_PAGES_URL: "https://b.pages.dev" }), {
+    url: "https://a.example",
+    source: "SITE_URL",
+  });
+  assert.deepEqual(resolveSiteUrl({ CF_PAGES_URL: "https://b.pages.dev" }), {
+    url: "https://b.pages.dev",
+    source: "CF_PAGES_URL",
+  });
+  assert.deepEqual(resolveSiteUrl({}), {
+    url: "https://andrescultori.vercel.app",
+    source: "default",
+  });
 });
