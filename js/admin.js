@@ -9,6 +9,9 @@ const STORAGE_BUCKET = "portfolio-images";
 let PROJECTS = [];
 let EDITING_SLUG = null; // null = creating a new project
 
+let AUTHORIZED_USER_ID = null; // id of the user currently shown as "authorized"
+let FORMS_DIRTY = false; // unsaved changes in #project-form or #site-settings-form
+
 function escapeHtml(str) {
   const div = document.createElement("div");
   div.textContent = str == null ? "" : String(str);
@@ -35,6 +38,20 @@ function showAuthState(state) {
     document.getElementById("btn-tab-site").className = "btn btn-ghost-light btn-sm";
   }
 }
+
+function markFormDirty() {
+  FORMS_DIRTY = true;
+}
+
+function clearFormDirty() {
+  FORMS_DIRTY = false;
+}
+
+window.addEventListener("beforeunload", (e) => {
+  if (!FORMS_DIRTY) return;
+  e.preventDefault();
+  e.returnValue = "";
+});
 
 function showFormSection() {
   document.getElementById("admin-panel").style.display = "none";
@@ -84,20 +101,45 @@ async function checkAuthAndRoute() {
   try {
     const { data: { session } } = await supabaseClient.auth.getSession();
     if (!session) {
+      AUTHORIZED_USER_ID = null;
       showAuthState("login");
       return;
     }
     const { data: isAdmin, error } = await supabaseClient.rpc("is_portfolio_admin");
     if (error || !isAdmin) {
+      AUTHORIZED_USER_ID = null;
       showAuthState("forbidden");
       return;
     }
+    AUTHORIZED_USER_ID = session.user.id;
     showAuthState("authorized");
     await loadProjects();
   } catch (err) {
+    AUTHORIZED_USER_ID = null;
     showAuthState("login");
     setStatus(document.getElementById("login-status"), `Erro ao verificar sessão: ${err.message}`, "err");
   }
+}
+
+/* Mirrors shouldRerouteOnAuthEvent() in scripts/lib/admin-auth.mjs (that
+   Node module can't be imported from this browser classic script). Keep
+   both in sync if the rule changes. */
+function shouldRerouteOnAuthEvent(event, userId, authorizedUserId) {
+  if (event === "TOKEN_REFRESHED") return false;
+  if (event === "SIGNED_OUT") return true;
+  if (userId && userId === authorizedUserId) return false;
+  return true;
+}
+
+async function handleAuthStateChange(event, session) {
+  const userId = session && session.user ? session.user.id : null;
+  if (!shouldRerouteOnAuthEvent(event, userId, AUTHORIZED_USER_ID)) {
+    // Same admin re-confirming (tab regained focus, token silently
+    // refreshed) — never reroute or reload, it would wipe whatever is
+    // mid-typing in the Projects or Site forms.
+    return;
+  }
+  await checkAuthAndRoute();
 }
 
 async function loadProjects() {
@@ -230,6 +272,7 @@ function openForm(slug) {
   document.getElementById("f-featured").checked = !!(p && p.featured);
   document.getElementById("f-draft").checked = !!(p && p.draft);
 
+  clearFormDirty();
   showFormSection();
 }
 
@@ -345,6 +388,7 @@ async function handleFormSubmit(e) {
     return;
   }
 
+  clearFormDirty();
   setStatus(statusEl, "Salvo! O site já reflete a mudança.", "ok");
   await loadProjects();
   setTimeout(showPanelSection, 900);
@@ -440,6 +484,7 @@ function populateSiteForm() {
   });
 
   setStatus(document.getElementById("site-form-status"), "", "");
+  clearFormDirty();
 }
 
 async function loadSiteSettings() {
@@ -500,6 +545,7 @@ async function handlePhotoUpload(e) {
   preview.src = `${photoPublicUrl(path)}?v=${Date.now()}`;
   preview.style.display = "inline-block";
   setStatus(statusEl, "Foto enviada! Clique em Salvar para aplicar.", "ok");
+  markFormDirty();
 }
 
 function handlePhotoReset() {
@@ -508,12 +554,14 @@ function handlePhotoReset() {
   preview.removeAttribute("src");
   preview.style.display = "none";
   setStatus(document.getElementById("s-photo-status"), "Foto será removida ao salvar.", "");
+  markFormDirty();
 }
 
 function handleFieldRestore(e) {
   const targetId = e.currentTarget.dataset.restore;
   const el = document.getElementById(targetId);
   if (el) el.value = "";
+  markFormDirty();
 }
 
 async function handleSiteFormSubmit(e) {
@@ -557,6 +605,7 @@ async function handleSiteFormSubmit(e) {
     return;
   }
 
+  clearFormDirty();
   setStatus(statusEl, "Salvo! O site já reflete a mudança.", "ok");
   await loadSiteSettings();
 }
@@ -570,6 +619,8 @@ function bindSiteSettingsEvents() {
   document.getElementById("s-photo-upload").addEventListener("change", handlePhotoUpload);
   document.getElementById("s-photo-reset").addEventListener("click", handlePhotoReset);
   document.getElementById("site-settings-form").addEventListener("submit", handleSiteFormSubmit);
+  document.getElementById("site-settings-form").addEventListener("input", markFormDirty);
+  document.getElementById("site-settings-form").addEventListener("change", markFormDirty);
   document.querySelectorAll("#admin-site-section [data-restore]").forEach((btn) => {
     btn.addEventListener("click", handleFieldRestore);
   });
@@ -599,10 +650,15 @@ function bindEvents() {
   document.getElementById("btn-logout").addEventListener("click", logout);
   document.getElementById("btn-logout-forbidden").addEventListener("click", logout);
   document.getElementById("btn-new").addEventListener("click", () => openForm(null));
-  document.getElementById("btn-cancel").addEventListener("click", showPanelSection);
+  document.getElementById("btn-cancel").addEventListener("click", () => {
+    clearFormDirty();
+    showPanelSection();
+  });
   document.getElementById("project-form").addEventListener("submit", handleFormSubmit);
   document.getElementById("f-cardImage-upload").addEventListener("change", handleCardImageUpload);
   document.getElementById("f-screenshot-upload").addEventListener("change", handleScreenshotUpload);
+  document.getElementById("project-form").addEventListener("input", markFormDirty);
+  document.getElementById("project-form").addEventListener("change", markFormDirty);
   bindSiteSettingsEvents();
 }
 
@@ -620,10 +676,8 @@ async function init() {
 
     supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
     bindEvents();
-    supabaseClient.auth.onAuthStateChange((event) => {
-      if (event === "SIGNED_IN" || event === "SIGNED_OUT" || event === "TOKEN_REFRESHED") {
-        checkAuthAndRoute();
-      }
+    supabaseClient.auth.onAuthStateChange((event, session) => {
+      handleAuthStateChange(event, session);
     });
     await checkAuthAndRoute();
   } catch (err) {

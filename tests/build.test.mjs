@@ -13,6 +13,7 @@ import { renderProjectPage } from "../scripts/lib/render-project-page.mjs";
 import { renderCardHtml, renderNoscriptList } from "../scripts/lib/render-card.mjs";
 import { buildSitemap, buildRobotsTxt, buildPersonJsonLd } from "../scripts/lib/seo.mjs";
 import { resolveSiteUrl } from "../scripts/lib/site-url.mjs";
+import { shouldRerouteOnAuthEvent } from "../scripts/lib/admin-auth.mjs";
 import {
   SITE_SETTINGS_TEXT_KEYS,
   filterI18nOverrides,
@@ -535,4 +536,27 @@ test("buildPersonJsonLd includes image only when provided", () => {
     social: { github: "https://github.com/andrescultori", linkedin: "" },
   });
   assert.equal("image" in withoutImage, false);
+});
+
+// --- admin-auth: shouldRerouteOnAuthEvent ---------------------------------------
+
+test("shouldRerouteOnAuthEvent never reroutes on TOKEN_REFRESHED, even for a different user id", () => {
+  assert.equal(shouldRerouteOnAuthEvent("TOKEN_REFRESHED", "user-1", "user-1"), false);
+  assert.equal(shouldRerouteOnAuthEvent("TOKEN_REFRESHED", "user-2", "user-1"), false);
+  assert.equal(shouldRerouteOnAuthEvent("TOKEN_REFRESHED", null, "user-1"), false);
+});
+
+test("shouldRerouteOnAuthEvent always reroutes on SIGNED_OUT", () => {
+  assert.equal(shouldRerouteOnAuthEvent("SIGNED_OUT", null, "user-1"), true);
+  assert.equal(shouldRerouteOnAuthEvent("SIGNED_OUT", "user-1", "user-1"), true);
+});
+
+test("shouldRerouteOnAuthEvent skips a duplicate SIGNED_IN for the same already-authorized user", () => {
+  assert.equal(shouldRerouteOnAuthEvent("SIGNED_IN", "user-1", "user-1"), false);
+});
+
+test("shouldRerouteOnAuthEvent reroutes for a new login (different user, or none authorized yet)", () => {
+  assert.equal(shouldRerouteOnAuthEvent("SIGNED_IN", "user-2", "user-1"), true);
+  assert.equal(shouldRerouteOnAuthEvent("SIGNED_IN", "user-1", null), true);
+  assert.equal(shouldRerouteOnAuthEvent("SIGNED_IN", null, null), true);
 });
