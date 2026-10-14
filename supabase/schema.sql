@@ -117,6 +117,68 @@ before update on public.portfolio_projects
 for each row execute function public.portfolio_set_updated_at();
 
 -- ---------------------------------------------------------------------------
+-- Site settings: single-row overrides editable from the admin's "Site" tab
+-- ---------------------------------------------------------------------------
+-- Added by supabase/migrations/20261014124242_site_settings.sql — same RLS
+-- shape as portfolio_projects above (public select, admin-only writes).
+
+create table public.portfolio_site_settings (
+  id integer primary key default 1,
+  photo_path text,
+  links jsonb not null default '{}'::jsonb,
+  i18n_overrides jsonb not null default '{}'::jsonb,
+  updated_at timestamptz not null default now(),
+  constraint portfolio_site_settings_single_row check (id = 1)
+);
+
+comment on table public.portfolio_site_settings is
+  'Single-row (id=1) overrides for the public site: profile photo, social links, and whitelisted i18n text overrides. Editable via the admin panel''s "Site" section.';
+
+comment on column public.portfolio_site_settings.photo_path is
+  'Object path inside the portfolio-images bucket, e.g. "site/profile.jpg". Empty/null means no custom photo — the site falls back to its default behavior.';
+
+comment on column public.portfolio_site_settings.links is
+  'Optional overrides for {github, linkedin, instagram}. Only non-empty https:// URLs are honored by readers; anything else is treated as "not set" and falls back to js/social.js''s SOCIAL_LINKS.';
+
+comment on column public.portfolio_site_settings.i18n_overrides is
+  'Optional overrides shaped as {"pt": {key: text}, "en": {key: text}}. Only keys in the code-side whitelist (hero_role, hero_bio, projects_title, projects_subtitle, contact_title, contact_subtitle, footer_tagline) are ever read — any other key is ignored by every consumer (js/i18n.js, scripts/build.mjs).';
+
+insert into public.portfolio_site_settings (id) values (1)
+on conflict (id) do nothing;
+
+alter table public.portfolio_site_settings enable row level security;
+
+create policy "portfolio_site_settings_select_public"
+  on public.portfolio_site_settings for select
+  using (true);
+
+create policy "portfolio_site_settings_insert_admins"
+  on public.portfolio_site_settings for insert
+  to authenticated
+  with check (public.is_portfolio_admin());
+
+create policy "portfolio_site_settings_update_admins"
+  on public.portfolio_site_settings for update
+  to authenticated
+  using (public.is_portfolio_admin())
+  with check (public.is_portfolio_admin());
+
+create policy "portfolio_site_settings_delete_admins"
+  on public.portfolio_site_settings for delete
+  to authenticated
+  using (public.is_portfolio_admin());
+
+create trigger portfolio_site_settings_set_updated_at
+before update on public.portfolio_site_settings
+for each row execute function public.portfolio_set_updated_at();
+
+-- No new Storage policies: the profile photo is uploaded to
+-- "site/profile.<ext>" inside the existing "portfolio-images" bucket (see
+-- Storage section below), which already allows admin insert/update/delete
+-- and public select on the whole bucket — no path-prefix scoping exists
+-- today, so nothing new is needed.
+
+-- ---------------------------------------------------------------------------
 -- Storage: image uploads from the admin panel (cardImage + screenshots)
 -- ---------------------------------------------------------------------------
 

@@ -46,6 +46,11 @@
         <button type="button" class="btn btn-ghost-light" id="btn-logout-forbidden">Sair e tentar outra conta</button>
       </section>
 
+      <div id="admin-tabs" class="admin-panel-actions" style="display:none; margin-bottom:16px;">
+        <button type="button" class="btn btn-primary btn-sm" id="btn-tab-projects">Projetos</button>
+        <button type="button" class="btn btn-ghost-light btn-sm" id="btn-tab-site">Site</button>
+      </div>
+
       <section id="admin-panel" class="admin-panel" style="display:none;">
         <div class="admin-panel-head">
           <h1>Projetos</h1>
@@ -147,6 +152,130 @@
             <button type="submit" class="btn btn-primary" id="btn-save">Salvar</button>
             <button type="button" class="btn btn-ghost-light" id="btn-cancel">Cancelar</button>
             <p class="form-status" id="form-status-msg" style="margin:0;"></p>
+          </div>
+        </form>
+      </section>
+
+      <section id="admin-site-section" class="admin-form-section" style="display:none;">
+        <h2>Configurações do site</h2>
+        <p class="form-hint">
+          Campos vazios mantêm o valor padrão já usado no código — preencha só o que quiser sobrescrever.
+        </p>
+        <p class="form-status" id="site-status" role="status" aria-live="polite"></p>
+
+        <form id="site-settings-form">
+          <div class="admin-form-grid">
+
+            <div class="form-field full">
+              <label for="s-photo-upload">Foto de perfil</label>
+              <div class="admin-image-row">
+                <img id="s-photo-preview" alt="Pré-visualização da foto" style="width:56px; height:56px; border-radius:12px; object-fit:cover; display:none;">
+                <label class="btn btn-ghost-light btn-sm admin-upload-btn">
+                  Enviar foto
+                  <input type="file" id="s-photo-upload" accept="image/jpeg,image/png,image/webp" hidden>
+                </label>
+              </div>
+              <p class="form-hint" id="s-photo-status" role="status" aria-live="polite">JPG, PNG ou WEBP, até 2 MB.</p>
+              <button type="button" class="btn btn-ghost-light btn-sm" id="s-photo-reset">Restaurar padrão (sem foto)</button>
+            </div>
+
+            <div class="form-field">
+              <label for="s-hero_role-pt">Headline do hero (PT)</label>
+              <input type="text" id="s-hero_role-pt" maxlength="120">
+              <button type="button" class="btn btn-ghost-light btn-sm" data-restore="s-hero_role-pt" style="margin-top:6px;">Restaurar padrão</button>
+            </div>
+            <div class="form-field">
+              <label for="s-hero_role-en">Headline do hero (EN)</label>
+              <input type="text" id="s-hero_role-en" maxlength="120">
+              <button type="button" class="btn btn-ghost-light btn-sm" data-restore="s-hero_role-en" style="margin-top:6px;">Restaurar padrão</button>
+            </div>
+
+            <div class="form-field">
+              <label for="s-hero_bio-pt">Descrição do hero (PT)</label>
+              <textarea id="s-hero_bio-pt" rows="3" maxlength="300"></textarea>
+              <button type="button" class="btn btn-ghost-light btn-sm" data-restore="s-hero_bio-pt" style="margin-top:6px;">Restaurar padrão</button>
+            </div>
+            <div class="form-field">
+              <label for="s-hero_bio-en">Descrição do hero (EN)</label>
+              <textarea id="s-hero_bio-en" rows="3" maxlength="300"></textarea>
+              <button type="button" class="btn btn-ghost-light btn-sm" data-restore="s-hero_bio-en" style="margin-top:6px;">Restaurar padrão</button>
+            </div>
+
+            <div class="form-field">
+              <label for="s-projects_title-pt">Título da seção Projetos (PT)</label>
+              <input type="text" id="s-projects_title-pt" maxlength="120">
+              <button type="button" class="btn btn-ghost-light btn-sm" data-restore="s-projects_title-pt" style="margin-top:6px;">Restaurar padrão</button>
+            </div>
+            <div class="form-field">
+              <label for="s-projects_title-en">Título da seção Projetos (EN)</label>
+              <input type="text" id="s-projects_title-en" maxlength="120">
+              <button type="button" class="btn btn-ghost-light btn-sm" data-restore="s-projects_title-en" style="margin-top:6px;">Restaurar padrão</button>
+            </div>
+
+            <div class="form-field">
+              <label for="s-projects_subtitle-pt">Subtítulo da seção Projetos (PT)</label>
+              <textarea id="s-projects_subtitle-pt" rows="2" maxlength="300"></textarea>
+              <button type="button" class="btn btn-ghost-light btn-sm" data-restore="s-projects_subtitle-pt" style="margin-top:6px;">Restaurar padrão</button>
+            </div>
+            <div class="form-field">
+              <label for="s-projects_subtitle-en">Subtítulo da seção Projetos (EN)</label>
+              <textarea id="s-projects_subtitle-en" rows="2" maxlength="300"></textarea>
+              <button type="button" class="btn btn-ghost-light btn-sm" data-restore="s-projects_subtitle-en" style="margin-top:6px;">Restaurar padrão</button>
+            </div>
+
+            <div class="form-field">
+              <label for="s-contact_title-pt">Título da página de Contato (PT)</label>
+              <input type="text" id="s-contact_title-pt" maxlength="120">
+              <button type="button" class="btn btn-ghost-light btn-sm" data-restore="s-contact_title-pt" style="margin-top:6px;">Restaurar padrão</button>
+            </div>
+            <div class="form-field">
+              <label for="s-contact_title-en">Título da página de Contato (EN)</label>
+              <input type="text" id="s-contact_title-en" maxlength="120">
+              <button type="button" class="btn btn-ghost-light btn-sm" data-restore="s-contact_title-en" style="margin-top:6px;">Restaurar padrão</button>
+            </div>
+
+            <div class="form-field">
+              <label for="s-contact_subtitle-pt">Subtítulo da página de Contato (PT)</label>
+              <textarea id="s-contact_subtitle-pt" rows="2" maxlength="300"></textarea>
+              <button type="button" class="btn btn-ghost-light btn-sm" data-restore="s-contact_subtitle-pt" style="margin-top:6px;">Restaurar padrão</button>
+            </div>
+            <div class="form-field">
+              <label for="s-contact_subtitle-en">Subtítulo da página de Contato (EN)</label>
+              <textarea id="s-contact_subtitle-en" rows="2" maxlength="300"></textarea>
+              <button type="button" class="btn btn-ghost-light btn-sm" data-restore="s-contact_subtitle-en" style="margin-top:6px;">Restaurar padrão</button>
+            </div>
+
+            <div class="form-field">
+              <label for="s-footer_tagline-pt">Frase do rodapé (PT)</label>
+              <textarea id="s-footer_tagline-pt" rows="2" maxlength="300"></textarea>
+              <button type="button" class="btn btn-ghost-light btn-sm" data-restore="s-footer_tagline-pt" style="margin-top:6px;">Restaurar padrão</button>
+            </div>
+            <div class="form-field">
+              <label for="s-footer_tagline-en">Frase do rodapé (EN)</label>
+              <textarea id="s-footer_tagline-en" rows="2" maxlength="300"></textarea>
+              <button type="button" class="btn btn-ghost-light btn-sm" data-restore="s-footer_tagline-en" style="margin-top:6px;">Restaurar padrão</button>
+            </div>
+
+            <div class="form-field">
+              <label for="s-link-github">Link do GitHub</label>
+              <input type="url" id="s-link-github" placeholder="https://github.com/...">
+              <button type="button" class="btn btn-ghost-light btn-sm" data-restore="s-link-github" style="margin-top:6px;">Restaurar padrão</button>
+            </div>
+            <div class="form-field">
+              <label for="s-link-linkedin">Link do LinkedIn</label>
+              <input type="url" id="s-link-linkedin" placeholder="https://www.linkedin.com/in/...">
+              <button type="button" class="btn btn-ghost-light btn-sm" data-restore="s-link-linkedin" style="margin-top:6px;">Restaurar padrão</button>
+            </div>
+            <div class="form-field">
+              <label for="s-link-instagram">Link do Instagram</label>
+              <input type="url" id="s-link-instagram" placeholder="https://www.instagram.com/...">
+              <button type="button" class="btn btn-ghost-light btn-sm" data-restore="s-link-instagram" style="margin-top:6px;">Restaurar padrão</button>
+            </div>
+          </div>
+
+          <div class="admin-form-actions">
+            <button type="submit" class="btn btn-primary" id="btn-save-site">Salvar</button>
+            <p class="form-status" id="site-form-status" role="status" aria-live="polite" style="margin:0;"></p>
           </div>
         </form>
       </section>

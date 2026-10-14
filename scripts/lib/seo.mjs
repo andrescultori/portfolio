@@ -7,9 +7,9 @@ export function buildRobotsTxt(siteUrl) {
   return `User-agent: *\nAllow: /\nSitemap: ${siteUrl}/sitemap.xml\n`;
 }
 
-export function buildPersonJsonLd({ siteUrl, social }) {
+export function buildPersonJsonLd({ siteUrl, social, image }) {
   const sameAs = [social.github, social.linkedin].filter(Boolean);
-  return {
+  const json = {
     "@context": "https://schema.org",
     "@type": "Person",
     name: "André Scultori",
@@ -17,4 +17,6 @@ export function buildPersonJsonLd({ siteUrl, social }) {
     url: `${siteUrl}/`,
     sameAs,
   };
+  if (image) json.image = image;
+  return json;
 }

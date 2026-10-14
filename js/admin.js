@@ -25,9 +25,15 @@ function showAuthState(state) {
   // state: "login" | "forbidden" | "authorized"
   document.getElementById("admin-login").style.display = state === "login" ? "block" : "none";
   document.getElementById("admin-forbidden").style.display = state === "forbidden" ? "block" : "none";
+  document.getElementById("admin-tabs").style.display = state === "authorized" ? "flex" : "none";
   document.getElementById("admin-panel").style.display = state === "authorized" ? "block" : "none";
   document.getElementById("admin-form-section").style.display = "none";
+  document.getElementById("admin-site-section").style.display = "none";
   document.getElementById("btn-logout").style.display = state === "login" ? "none" : "inline-flex";
+  if (state === "authorized") {
+    document.getElementById("btn-tab-projects").className = "btn btn-primary btn-sm";
+    document.getElementById("btn-tab-site").className = "btn btn-ghost-light btn-sm";
+  }
 }
 
 function showFormSection() {
@@ -360,6 +366,215 @@ async function deleteProject(slug) {
   await loadProjects();
 }
 
+/* ---------------------------------------------------------------------
+   Site settings ("Site" tab): single-row portfolio_site_settings — a
+   profile photo, social links, and whitelisted i18n text overrides.
+   Mirrors the whitelist in scripts/lib/site-settings.mjs and js/i18n.js
+   (duplicated by hand — this is a browser classic script, Node can't
+   import it and vice versa). ----------------------------------------- */
+
+const SITE_SETTINGS_TEXT_KEYS = [
+  "hero_role",
+  "hero_bio",
+  "projects_title",
+  "projects_subtitle",
+  "contact_title",
+  "contact_subtitle",
+  "footer_tagline",
+];
+const SITE_SETTINGS_LINK_KEYS = ["github", "linkedin", "instagram"];
+const SITE_PHOTO_MAX_BYTES = 2 * 1024 * 1024;
+const SITE_PHOTO_ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
+
+let SITE_SETTINGS = { photoPath: "", links: {}, i18nOverrides: { pt: {}, en: {} } };
+let PENDING_PHOTO_PATH = null; // null = no pending change; "" = pending removal
+
+function isHttpsUrlAdmin(value) {
+  return typeof value === "string" && /^https:\/\//i.test(value.trim());
+}
+
+function photoPublicUrl(path) {
+  if (!path) return "";
+  const base = SUPABASE_URL.replace(/\/+$/, "");
+  return `${base}/storage/v1/object/public/${STORAGE_BUCKET}/${path}`;
+}
+
+function showProjectsTab() {
+  document.getElementById("admin-site-section").style.display = "none";
+  document.getElementById("btn-tab-projects").className = "btn btn-primary btn-sm";
+  document.getElementById("btn-tab-site").className = "btn btn-ghost-light btn-sm";
+  showPanelSection();
+}
+
+function showSiteTab() {
+  document.getElementById("admin-panel").style.display = "none";
+  document.getElementById("admin-form-section").style.display = "none";
+  document.getElementById("admin-site-section").style.display = "block";
+  document.getElementById("btn-tab-projects").className = "btn btn-ghost-light btn-sm";
+  document.getElementById("btn-tab-site").className = "btn btn-primary btn-sm";
+}
+
+function populateSiteForm() {
+  PENDING_PHOTO_PATH = null;
+
+  const preview = document.getElementById("s-photo-preview");
+  if (SITE_SETTINGS.photoPath) {
+    preview.src = photoPublicUrl(SITE_SETTINGS.photoPath);
+    preview.style.display = "inline-block";
+  } else {
+    preview.removeAttribute("src");
+    preview.style.display = "none";
+  }
+  setStatus(document.getElementById("s-photo-status"), "JPG, PNG ou WEBP, até 2 MB.", "");
+
+  const overridesPt = SITE_SETTINGS.i18nOverrides.pt || {};
+  const overridesEn = SITE_SETTINGS.i18nOverrides.en || {};
+  SITE_SETTINGS_TEXT_KEYS.forEach((key) => {
+    document.getElementById(`s-${key}-pt`).value = overridesPt[key] || "";
+    document.getElementById(`s-${key}-en`).value = overridesEn[key] || "";
+  });
+
+  const links = SITE_SETTINGS.links || {};
+  SITE_SETTINGS_LINK_KEYS.forEach((key) => {
+    document.getElementById(`s-link-${key}`).value = links[key] || "";
+  });
+
+  setStatus(document.getElementById("site-form-status"), "", "");
+}
+
+async function loadSiteSettings() {
+  const statusEl = document.getElementById("site-status");
+  setStatus(statusEl, "Carregando configurações…", "");
+
+  const { data, error } = await supabaseClient
+    .from("portfolio_site_settings")
+    .select("*")
+    .eq("id", 1)
+    .maybeSingle();
+
+  if (error) {
+    setStatus(statusEl, `Não foi possível carregar as configurações: ${error.message}`, "err");
+    return;
+  }
+
+  SITE_SETTINGS = {
+    photoPath: (data && data.photo_path) || "",
+    links: (data && data.links) || {},
+    i18nOverrides: (data && data.i18n_overrides) || { pt: {}, en: {} },
+  };
+  setStatus(statusEl, "", "");
+  populateSiteForm();
+}
+
+async function handlePhotoUpload(e) {
+  const file = e.target.files[0];
+  e.target.value = "";
+  if (!file) return;
+
+  const statusEl = document.getElementById("s-photo-status");
+
+  if (!SITE_PHOTO_ALLOWED_TYPES.includes(file.type)) {
+    setStatus(statusEl, "Formato não aceito. Use JPG, PNG ou WEBP.", "err");
+    return;
+  }
+  if (file.size > SITE_PHOTO_MAX_BYTES) {
+    setStatus(statusEl, "Imagem muito grande. O limite é 2 MB.", "err");
+    return;
+  }
+
+  setStatus(statusEl, "Enviando foto…", "");
+  const ext = file.type === "image/png" ? "png" : file.type === "image/webp" ? "webp" : "jpg";
+  const path = `site/profile.${ext}`;
+
+  const { error } = await supabaseClient.storage
+    .from(STORAGE_BUCKET)
+    .upload(path, file, { upsert: true, contentType: file.type });
+
+  if (error) {
+    setStatus(statusEl, `Erro ao enviar a foto: ${error.message}`, "err");
+    return;
+  }
+
+  PENDING_PHOTO_PATH = path;
+  const preview = document.getElementById("s-photo-preview");
+  preview.src = `${photoPublicUrl(path)}?v=${Date.now()}`;
+  preview.style.display = "inline-block";
+  setStatus(statusEl, "Foto enviada! Clique em Salvar para aplicar.", "ok");
+}
+
+function handlePhotoReset() {
+  PENDING_PHOTO_PATH = "";
+  const preview = document.getElementById("s-photo-preview");
+  preview.removeAttribute("src");
+  preview.style.display = "none";
+  setStatus(document.getElementById("s-photo-status"), "Foto será removida ao salvar.", "");
+}
+
+function handleFieldRestore(e) {
+  const targetId = e.currentTarget.dataset.restore;
+  const el = document.getElementById(targetId);
+  if (el) el.value = "";
+}
+
+async function handleSiteFormSubmit(e) {
+  e.preventDefault();
+  const statusEl = document.getElementById("site-form-status");
+
+  const links = {};
+  for (const key of SITE_SETTINGS_LINK_KEYS) {
+    const value = document.getElementById(`s-link-${key}`).value.trim();
+    if (value && !isHttpsUrlAdmin(value)) {
+      setStatus(statusEl, `O link de ${key} precisa começar com https://.`, "err");
+      return;
+    }
+    if (value) links[key] = value;
+  }
+
+  const i18nOverrides = { pt: {}, en: {} };
+  for (const key of SITE_SETTINGS_TEXT_KEYS) {
+    for (const lang of ["pt", "en"]) {
+      const input = document.getElementById(`s-${key}-${lang}`);
+      const value = input.value.trim();
+      const limit = Number(input.getAttribute("maxlength")) || 300;
+      if (value.length > limit) {
+        setStatus(statusEl, `O campo "${key}" (${lang.toUpperCase()}) passou do limite de ${limit} caracteres.`, "err");
+        return;
+      }
+      if (value) i18nOverrides[lang][key] = value;
+    }
+  }
+
+  const photoPath = PENDING_PHOTO_PATH === null ? SITE_SETTINGS.photoPath : PENDING_PHOTO_PATH;
+
+  setStatus(statusEl, "Salvando…", "");
+  const { error } = await supabaseClient
+    .from("portfolio_site_settings")
+    .update({ photo_path: photoPath, links, i18n_overrides: i18nOverrides })
+    .eq("id", 1);
+
+  if (error) {
+    setStatus(statusEl, `Erro ao salvar: ${error.message}`, "err");
+    return;
+  }
+
+  setStatus(statusEl, "Salvo! O site já reflete a mudança.", "ok");
+  await loadSiteSettings();
+}
+
+function bindSiteSettingsEvents() {
+  document.getElementById("btn-tab-projects").addEventListener("click", showProjectsTab);
+  document.getElementById("btn-tab-site").addEventListener("click", () => {
+    showSiteTab();
+    loadSiteSettings();
+  });
+  document.getElementById("s-photo-upload").addEventListener("change", handlePhotoUpload);
+  document.getElementById("s-photo-reset").addEventListener("click", handlePhotoReset);
+  document.getElementById("site-settings-form").addEventListener("submit", handleSiteFormSubmit);
+  document.querySelectorAll("#admin-site-section [data-restore]").forEach((btn) => {
+    btn.addEventListener("click", handleFieldRestore);
+  });
+}
+
 async function handleLoginClick() {
   const statusEl = document.getElementById("login-status");
   try {
@@ -388,6 +603,7 @@ function bindEvents() {
   document.getElementById("project-form").addEventListener("submit", handleFormSubmit);
   document.getElementById("f-cardImage-upload").addEventListener("change", handleCardImageUpload);
   document.getElementById("f-screenshot-upload").addEventListener("change", handleScreenshotUpload);
+  bindSiteSettingsEvents();
 }
 
 async function init() {

@@ -138,5 +138,52 @@ function initLangToggle(onChange) {
       if (typeof onChange === "function") onChange(getLang());
     });
   });
+  // Instant paint with the built-in defaults — never block on the network.
   applyStaticI18n();
+
+  // Then, in the background, layer admin-edited text on top and re-apply.
+  // A failed/slow fetch just means the page keeps showing the defaults.
+  applySiteSettingsOverrides().then(() => {
+    applyStaticI18n();
+  });
+}
+
+/* Only these keys can be overridden by portfolio_site_settings.i18n_overrides
+   — mirrors SITE_SETTINGS_TEXT_KEYS in scripts/lib/site-settings.mjs (that
+   Node module can't be imported from this browser classic script, so keep
+   both lists in sync by hand). */
+const SITE_SETTINGS_TEXT_KEYS = [
+  "hero_role",
+  "hero_bio",
+  "projects_title",
+  "projects_subtitle",
+  "contact_title",
+  "contact_subtitle",
+  "footer_tagline",
+];
+
+async function applySiteSettingsOverrides() {
+  try {
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/portfolio_site_settings?select=i18n_overrides&id=eq.1&limit=1`,
+      { headers: { apikey: SUPABASE_PUBLISHABLE_KEY }, cache: "no-store" }
+    );
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const rows = await res.json();
+    const overrides = rows && rows[0] && rows[0].i18n_overrides;
+    if (!overrides || typeof overrides !== "object") return;
+
+    ["pt", "en"].forEach((lang) => {
+      const langOverrides = overrides[lang];
+      if (!langOverrides || typeof langOverrides !== "object") return;
+      SITE_SETTINGS_TEXT_KEYS.forEach((key) => {
+        const value = langOverrides[key];
+        if (typeof value === "string" && value.trim()) {
+          I18N[lang][key] = value.trim();
+        }
+      });
+    });
+  } catch (err) {
+    // Network/Supabase failure: silently keep the built-in defaults.
+  }
 }
