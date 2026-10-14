@@ -347,7 +347,7 @@ test("resolveSiteUrl prioritizes SITE_URL, then CF_PAGES_URL, then the default",
     source: "CF_PAGES_URL",
   });
   assert.deepEqual(resolveSiteUrl({}), {
-    url: "https://andrescultori.vercel.app",
+    url: "https://andrescultori.pages.dev",
     source: "default",
   });
 });
