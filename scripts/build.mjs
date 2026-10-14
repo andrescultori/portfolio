@@ -14,10 +14,20 @@ import { renderProjectPage } from "./lib/render-project-page.mjs";
 import { buildSitemap, buildRobotsTxt, buildPersonJsonLd } from "./lib/seo.mjs";
 import { resolveSiteUrl } from "./lib/site-url.mjs";
 import { safeJsonLd } from "./lib/html.mjs";
+import {
+  SITE_SETTINGS_TEXT_KEYS,
+  fetchSiteSettings,
+  resolvePhotoUrl,
+  substituteDataI18n,
+  replaceHrefById,
+  replaceImgSrcById,
+  replaceTextById,
+} from "./lib/site-settings.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.join(__dirname, "..");
 const DIST = path.join(ROOT, "dist");
+const SITE_SETTINGS_STORAGE_BUCKET = "portfolio-images";
 
 const INCLUDE = ["index.html", "projeto.html", "contato.html", "admin.html", "css", "js", "img", "data"];
 
@@ -125,6 +135,34 @@ async function main() {
     social = { linkedin: "", instagram: "", github: "https://github.com/andrescultori", email: "", resume: "" };
   }
 
+  // Site settings (admin-editable text/photo/links) — Supabase-first, same
+  // pattern as projects, falling back to "use the code's own defaults"
+  // (no JSON-file equivalent exists for this one).
+  const {
+    settings: siteSettings,
+    source: siteSettingsSource,
+    warnings: siteSettingsWarnings,
+  } = await fetchSiteSettings({ supabaseUrl, supabaseKey, source: forcedSource, timeoutMs: 10000 });
+  warnings.push(...siteSettingsWarnings);
+  log(`Site settings: ${siteSettingsSource}`);
+
+  const effectiveLinks = {
+    github: (siteSettings && siteSettings.links.github) || social.github,
+    linkedin: (siteSettings && siteSettings.links.linkedin) || social.linkedin,
+    instagram: (siteSettings && siteSettings.links.instagram) || social.instagram,
+  };
+
+  const photoUrl = siteSettings
+    ? resolvePhotoUrl({
+        supabaseUrl,
+        bucket: SITE_SETTINGS_STORAGE_BUCKET,
+        photoPath: siteSettings.photoPath,
+        updatedAt: siteSettings.updatedAt,
+      })
+    : "";
+
+  const ptOverrides = (siteSettings && siteSettings.i18nOverrides.pt) || {};
+
   // index.html
   const indexPath = path.join(DIST, "index.html");
   let indexHtml = readFileSync(indexPath, "utf8");
@@ -145,15 +183,50 @@ async function main() {
   }
   indexHtml = indexHtml.replace(NOSCRIPT_MARKER, renderNoscriptList(projects));
 
-  const personJsonLd = buildPersonJsonLd({ siteUrl: SITE_URL, social });
+  // Site settings: text overrides (PT, no-op where a key doesn't appear on
+  // this page), social hrefs, and the hero photo.
+  for (const key of SITE_SETTINGS_TEXT_KEYS) {
+    if (ptOverrides[key]) indexHtml = substituteDataI18n(indexHtml, key, ptOverrides[key]);
+  }
+  indexHtml = replaceHrefById(indexHtml, "github-link", effectiveLinks.github);
+  indexHtml = replaceHrefById(indexHtml, "github-link-footer", effectiveLinks.github);
+  indexHtml = replaceHrefById(indexHtml, "linkedin-link", effectiveLinks.linkedin);
+  indexHtml = replaceHrefById(indexHtml, "linkedin-link-footer", effectiveLinks.linkedin);
+  if (photoUrl) indexHtml = replaceImgSrcById(indexHtml, "hero-photo", photoUrl);
+
+  const personJsonLd = buildPersonJsonLd({ siteUrl: SITE_URL, social: effectiveLinks, image: photoUrl || undefined });
+  const ogImageTag = photoUrl ? `\n  <meta property="og:image" content="${photoUrl}">` : "";
   const headExtra = `  <link rel="canonical" href="${SITE_URL}/">
-  <meta property="og:url" content="${SITE_URL}/">
+  <meta property="og:url" content="${SITE_URL}/">${ogImageTag}
   <script type="application/ld+json">${safeJsonLd(personJsonLd)}</script>
 </head>`;
   indexHtml = indexHtml.replace("</head>", headExtra);
-  warnings.push("Home: og:image omitido — img/profile/andre.jpg ainda não existe (ver README > Configuração pendente).");
+  if (!photoUrl) {
+    warnings.push(
+      "Home: og:image omitido — nenhuma foto configurada (nem em portfolio_site_settings, nem em img/profile/andre.jpg)."
+    );
+  }
 
   writeFileSync(indexPath, indexHtml, "utf8");
+
+  // contato.html: same text/href substitutions, no SEO meta changes (out of
+  // scope for this task — index.html already carries the site-wide tags).
+  const contatoPath = path.join(DIST, "contato.html");
+  let contatoHtml = readFileSync(contatoPath, "utf8");
+  for (const key of SITE_SETTINGS_TEXT_KEYS) {
+    if (ptOverrides[key]) contatoHtml = substituteDataI18n(contatoHtml, key, ptOverrides[key]);
+  }
+  contatoHtml = replaceHrefById(contatoHtml, "github-contact", effectiveLinks.github);
+  contatoHtml = replaceHrefById(contatoHtml, "linkedin-contact", effectiveLinks.linkedin);
+  contatoHtml = replaceHrefById(contatoHtml, "instagram-contact", effectiveLinks.instagram);
+  if (siteSettings && siteSettings.links.github) {
+    contatoHtml = replaceTextById(
+      contatoHtml,
+      "github-contact-label",
+      effectiveLinks.github.replace(/^https:\/\//i, "")
+    );
+  }
+  writeFileSync(contatoPath, contatoHtml, "utf8");
 
   // Per-project static pages.
   mkdirSync(path.join(DIST, "projeto"), { recursive: true });

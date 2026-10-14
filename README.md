@@ -42,6 +42,16 @@ Acesse `admin.html` → **Entrar com GitHub**. Só a conta autorizada (ver `supa
 
 Qualquer mudança aparece no site na hora — não precisa de `git push` nem de redeploy.
 
+### Aba "Site" do painel admin
+
+Além dos projetos, o admin edita o conteúdo geral do site (tabela `portfolio_site_settings` no Supabase):
+
+- foto de perfil (upload direto, até 2 MB — JPG, PNG ou WEBP);
+- headline e descrição do hero, títulos da seção Projetos e da página de Contato, e a frase do rodapé — em PT e EN, cada um com um botão "Restaurar padrão" individual;
+- links do GitHub, LinkedIn e Instagram (alimentam o hero, o rodapé e a página de Contato).
+
+Campos em branco mantêm o valor padrão já embutido no código — não precisa preencher tudo. Como no restante do admin, a mudança aparece no site ao vivo na hora; o HTML pré-renderizado só reflete no próximo deploy (ver "Build e deploy" abaixo).
+
 ### Editando `data/projects.json` na mão (fallback / modo de emergência)
 
 Esse arquivo só é lido quando o site não consegue falar com o Supabase. Editá-lo manualmente **não atualiza o site enquanto o Supabase estiver no ar** — ele continua sendo a fonte real. Útil só como rede de segurança ou pra reconstruir os dados do zero se precisar.
@@ -51,6 +61,7 @@ Esse arquivo só é lido quando o site não consegue falar com o Supabase. Edit�
 A Vercel builda o site a cada push com `npm run build` (`scripts/build.mjs`), que gera uma versão **pré-renderizada** em `dist/` — HTML de verdade (home, cada projeto, sitemap, robots.txt), não dependente de JavaScript rodar no navegador. Isso existe para que crawlers, a prévia de links (LinkedIn etc.) e ATS de recrutamento vejam o conteúdo real, já que a interface interativa (filtro por stack, troca PT/EN) continua 100% client-side e inalterada.
 
 - **Fonte dos dados no build**: primeiro tenta o Supabase (mesma tabela e filtro que o site usa em runtime); se falhar (rede, erro HTTP, JSON inválido, timeout de 10s) ou vier vazio, cai para `data/projects.json`. Rascunhos (`draft: true`) são sempre descartados, mesmo que o Supabase devolva algum.
+- O mesmo vale para as configurações da aba "Site" (`portfolio_site_settings`): se o Supabase não responder, o build usa os valores padrão já embutidos no código (não há um JSON de fallback separado para isso).
 - **`PRERENDER_SOURCE=json`**: força o build a ignorar o Supabase e usar só `data/projects.json` — útil para testes e builds 100% offline/determinísticos.
 - **`SUPABASE_URL` / `SUPABASE_ANON_KEY`**: sobrescrevem os valores lidos de `js/supabase-config.js`, se precisar apontar para outro projeto (ex.: CI).
 - O HTML estático só reflete o Supabase no momento do build — uma edição feita no painel admin não aparece no HTML pré-renderizado até o próximo deploy. O conteúdo *dinâmico* (o que o visitante vê depois que o JS carrega) continua sempre ao vivo, como hoje.

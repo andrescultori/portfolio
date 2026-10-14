@@ -11,8 +11,19 @@ import { mapJsonProject } from "../scripts/lib/json-source.mjs";
 import { mapSupabaseRow } from "../scripts/lib/supabase-source.mjs";
 import { renderProjectPage } from "../scripts/lib/render-project-page.mjs";
 import { renderCardHtml, renderNoscriptList } from "../scripts/lib/render-card.mjs";
-import { buildSitemap, buildRobotsTxt } from "../scripts/lib/seo.mjs";
+import { buildSitemap, buildRobotsTxt, buildPersonJsonLd } from "../scripts/lib/seo.mjs";
 import { resolveSiteUrl } from "../scripts/lib/site-url.mjs";
+import {
+  SITE_SETTINGS_TEXT_KEYS,
+  filterI18nOverrides,
+  filterLinks,
+  resolvePhotoUrl,
+  fetchSiteSettings,
+  substituteDataI18n,
+  replaceHrefById,
+  replaceImgSrcById,
+  replaceTextById,
+} from "../scripts/lib/site-settings.mjs";
 
 const FIXTURE_JSON = path.join(path.dirname(fileURLToPath(import.meta.url)), "fixtures", "projects.json");
 
@@ -338,4 +349,190 @@ test("resolveSiteUrl prioritizes SITE_URL, then CF_PAGES_URL, then the default",
     url: "https://andrescultori.vercel.app",
     source: "default",
   });
+});
+
+// --- site-settings: filterI18nOverrides / filterLinks -------------------------
+
+test("filterI18nOverrides keeps only whitelisted keys with a non-empty value", () => {
+  const result = filterI18nOverrides({
+    pt: { hero_role: "Novo cargo", nao_existe: "ignorado", hero_bio: "   " },
+    en: { hero_role: "New role" },
+    es: { hero_role: "Ignorado — idioma não suportado" },
+  });
+  assert.deepEqual(result, {
+    pt: { hero_role: "Novo cargo" },
+    en: { hero_role: "New role" },
+  });
+});
+
+test("filterI18nOverrides treats an empty string as 'no override' (restaurar padrão)", () => {
+  const result = filterI18nOverrides({ pt: { hero_role: "" } });
+  assert.deepEqual(result, { pt: {}, en: {} });
+});
+
+test("filterI18nOverrides covers every whitelisted key", () => {
+  const raw = { pt: {}, en: {} };
+  SITE_SETTINGS_TEXT_KEYS.forEach((key) => {
+    raw.pt[key] = `valor-${key}`;
+  });
+  const result = filterI18nOverrides(raw);
+  assert.deepEqual(Object.keys(result.pt).sort(), [...SITE_SETTINGS_TEXT_KEYS].sort());
+});
+
+test("filterLinks discards any value that isn't a non-empty https(s) URL", () => {
+  const result = filterLinks({
+    github: "https://github.com/andrescultori",
+    linkedin: "javascript:alert(1)",
+    instagram: "",
+    extra: "https://example.com",
+  });
+  assert.deepEqual(result, { github: "https://github.com/andrescultori" });
+});
+
+// --- site-settings: resolvePhotoUrl ---------------------------------------------
+
+test("resolvePhotoUrl builds the public Storage URL with a cache-busting ?v=", () => {
+  const url = resolvePhotoUrl({
+    supabaseUrl: "https://example.supabase.co/",
+    bucket: "portfolio-images",
+    photoPath: "site/profile.jpg",
+    updatedAt: "2026-01-01T00:00:00.000Z",
+  });
+  assert.equal(
+    url,
+    `https://example.supabase.co/storage/v1/object/public/portfolio-images/site/profile.jpg?v=${new Date(
+      "2026-01-01T00:00:00.000Z"
+    ).getTime()}`
+  );
+});
+
+test("resolvePhotoUrl returns an empty string when there's no photo", () => {
+  assert.equal(resolvePhotoUrl({ supabaseUrl: "https://example.supabase.co", bucket: "b", photoPath: "" }), "");
+});
+
+// --- site-settings: fetchSiteSettings (Supabase-first, default fallback) ------
+
+test("fetchSiteSettings honors source=json and never calls fetch", async () => {
+  const fakeFetch = async () => {
+    throw new Error("should not be called");
+  };
+  const result = await fetchSiteSettings({
+    supabaseUrl: "https://fake.supabase.co",
+    supabaseKey: "key",
+    source: "json",
+    fetchImpl: fakeFetch,
+  });
+  assert.equal(result.source, "default");
+  assert.equal(result.settings, null);
+  assert.deepEqual(result.warnings, []);
+});
+
+test("fetchSiteSettings falls back to defaults when credentials are missing", async () => {
+  const result = await fetchSiteSettings({ supabaseUrl: "", supabaseKey: "" });
+  assert.equal(result.source, "default");
+  assert.equal(result.settings, null);
+});
+
+test("fetchSiteSettings falls back to defaults when the Supabase fetch fails", async () => {
+  const fakeFetch = async () => {
+    throw new Error("network down");
+  };
+  const result = await fetchSiteSettings({
+    supabaseUrl: "https://fake.supabase.co",
+    supabaseKey: "key",
+    fetchImpl: fakeFetch,
+  });
+  assert.equal(result.source, "default");
+});
+
+test("fetchSiteSettings falls back to defaults when Supabase returns no row", () => {
+  return (async () => {
+    const fakeFetch = async () => ({ ok: true, json: async () => [] });
+    const result = await fetchSiteSettings({
+      supabaseUrl: "https://fake.supabase.co",
+      supabaseKey: "key",
+      fetchImpl: fakeFetch,
+    });
+    assert.equal(result.source, "default");
+  })();
+});
+
+test("fetchSiteSettings normalizes a real row (filters links/overrides, keeps photo_path)", async () => {
+  const fakeFetch = async () => ({
+    ok: true,
+    json: async () => [
+      {
+        photo_path: "site/profile.jpg",
+        links: { github: "https://github.com/andrescultori", linkedin: "not-a-url" },
+        i18n_overrides: { pt: { hero_role: "Novo cargo" }, en: {} },
+        updated_at: "2026-01-01T00:00:00.000Z",
+      },
+    ],
+  });
+  const result = await fetchSiteSettings({
+    supabaseUrl: "https://fake.supabase.co",
+    supabaseKey: "key",
+    fetchImpl: fakeFetch,
+  });
+  assert.equal(result.source, "supabase");
+  assert.deepEqual(result.settings, {
+    photoPath: "site/profile.jpg",
+    links: { github: "https://github.com/andrescultori" },
+    i18nOverrides: { pt: { hero_role: "Novo cargo" }, en: {} },
+    updatedAt: "2026-01-01T00:00:00.000Z",
+  });
+});
+
+// --- site-settings: HTML substitution helpers (build-time) ---------------------
+
+test("substituteDataI18n escapes HTML and replaces only the matching element", () => {
+  const html = '<p data-i18n="hero_bio">Bio padrão</p><p data-i18n="other">Outro</p>';
+  const out = substituteDataI18n(html, "hero_bio", '<script>alert(1)</script>');
+  assert.match(out, /<p data-i18n="hero_bio">&lt;script&gt;alert\(1\)&lt;\/script&gt;<\/p>/);
+  assert.match(out, /<p data-i18n="other">Outro<\/p>/);
+});
+
+test("substituteDataI18n is a no-op when the key isn't present", () => {
+  const html = '<p data-i18n="hero_bio">Bio padrão</p>';
+  assert.equal(substituteDataI18n(html, "contact_title", "Novo título"), html);
+});
+
+test("replaceHrefById only accepts a valid https(s) URL, otherwise leaves the href untouched", () => {
+  const html = '<a id="github-link" href="https://github.com/andrescultori">GitHub</a>';
+  assert.match(
+    replaceHrefById(html, "github-link", "https://github.com/outraconta"),
+    /href="https:\/\/github\.com\/outraconta"/
+  );
+  assert.equal(replaceHrefById(html, "github-link", "javascript:alert(1)"), html);
+  assert.equal(replaceHrefById(html, "github-link", ""), html);
+  assert.equal(replaceHrefById(html, "does-not-exist", "https://example.com"), html);
+});
+
+test("replaceImgSrcById swaps the src of the matching <img id>", () => {
+  const html = '<img id="hero-photo" src="img/profile/andre.jpg" alt="André Scultori">';
+  const out = replaceImgSrcById(html, "hero-photo", "https://example.supabase.co/storage/v1/object/public/portfolio-images/site/profile.jpg");
+  assert.match(out, /src="https:\/\/example\.supabase\.co\/storage\/v1\/object\/public\/portfolio-images\/site\/profile\.jpg"/);
+});
+
+test("replaceTextById escapes HTML and only touches the matching id", () => {
+  const html = '<span id="github-contact-label">github.com/andrescultori</span>';
+  const out = replaceTextById(html, "github-contact-label", "github.com/<script>");
+  assert.match(out, /<span id="github-contact-label">github\.com\/&lt;script&gt;<\/span>/);
+});
+
+// --- seo: buildPersonJsonLd with an image -------------------------------------
+
+test("buildPersonJsonLd includes image only when provided", () => {
+  const withImage = buildPersonJsonLd({
+    siteUrl: "https://andrescultori.vercel.app",
+    social: { github: "https://github.com/andrescultori", linkedin: "" },
+    image: "https://andrescultori.vercel.app/img/profile.jpg",
+  });
+  assert.equal(withImage.image, "https://andrescultori.vercel.app/img/profile.jpg");
+
+  const withoutImage = buildPersonJsonLd({
+    siteUrl: "https://andrescultori.vercel.app",
+    social: { github: "https://github.com/andrescultori", linkedin: "" },
+  });
+  assert.equal("image" in withoutImage, false);
 });
