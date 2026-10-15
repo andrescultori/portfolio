@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
+import { readFileSync } from "node:fs";
 
 import { escapeHtml, safeJsonLd } from "../scripts/lib/html.mjs";
 import { isValidUrl, validateProject, BuildValidationError } from "../scripts/lib/validate.mjs";
@@ -26,7 +27,30 @@ import {
   replaceTextById,
 } from "../scripts/lib/site-settings.mjs";
 
-const FIXTURE_JSON = path.join(path.dirname(fileURLToPath(import.meta.url)), "fixtures", "projects.json");
+const TESTS_DIR = path.dirname(fileURLToPath(import.meta.url));
+const FIXTURE_JSON = path.join(TESTS_DIR, "fixtures", "projects.json");
+const REPO_ROOT = path.join(TESTS_DIR, "..");
+
+/* Every page that loads js/i18n.js or js/social.js must also load
+   js/supabase-config.js *before* either of them — those two now read
+   SUPABASE_URL/SUPABASE_PUBLISHABLE_KEY (site settings overrides). Missing
+   the script entirely throws a ReferenceError inside a try/catch that
+   swallows it silently, so admin edits (Site tab: links, PT/EN text) just
+   never show up on that page — exactly the bug found in contato.html. */
+function scriptSrcs(html) {
+  return [...html.matchAll(/<script\s+src="([^"]+)"/g)].map((m) => m[1]);
+}
+
+function assertSupabaseConfigLoadsBeforeDependents(html, label) {
+  const names = scriptSrcs(html).map((src) => src.replace(/^(\.\.\/)+/, "").replace(/^\//, ""));
+  const configIndex = names.indexOf("js/supabase-config.js");
+  ["js/i18n.js", "js/social.js"].forEach((dep) => {
+    const depIndex = names.indexOf(dep);
+    if (depIndex === -1) return; // this page doesn't load that script at all
+    assert.notEqual(configIndex, -1, `${label}: carrega ${dep} mas não carrega js/supabase-config.js`);
+    assert.ok(configIndex < depIndex, `${label}: js/supabase-config.js precisa carregar antes de ${dep}`);
+  });
+}
 
 // --- escapeHtml -------------------------------------------------------
 
@@ -559,4 +583,41 @@ test("shouldRerouteOnAuthEvent reroutes for a new login (different user, or none
   assert.equal(shouldRerouteOnAuthEvent("SIGNED_IN", "user-2", "user-1"), true);
   assert.equal(shouldRerouteOnAuthEvent("SIGNED_IN", "user-1", null), true);
   assert.equal(shouldRerouteOnAuthEvent("SIGNED_IN", null, null), true);
+});
+
+// --- script load order: supabase-config.js before i18n.js/social.js ----------
+
+test("index.html loads js/supabase-config.js before js/i18n.js and js/social.js", () => {
+  const html = readFileSync(path.join(REPO_ROOT, "index.html"), "utf8");
+  assertSupabaseConfigLoadsBeforeDependents(html, "index.html");
+});
+
+test("projeto.html loads js/supabase-config.js before js/i18n.js and js/social.js", () => {
+  const html = readFileSync(path.join(REPO_ROOT, "projeto.html"), "utf8");
+  assertSupabaseConfigLoadsBeforeDependents(html, "projeto.html");
+});
+
+test("contato.html loads js/supabase-config.js before js/i18n.js and js/social.js", () => {
+  const html = readFileSync(path.join(REPO_ROOT, "contato.html"), "utf8");
+  assertSupabaseConfigLoadsBeforeDependents(html, "contato.html");
+});
+
+test("renderProjectPage's static output (dist/projeto/<slug>/index.html) loads js/supabase-config.js before js/i18n.js and js/social.js", () => {
+  const project = {
+    slug: "demo",
+    title: "Demo",
+    cardImage: "",
+    screenshots: [],
+    description: { pt: "d", en: "d" },
+    stack: [],
+    links: {},
+    note: null,
+  };
+  const { html } = renderProjectPage({
+    project,
+    siteUrl: "https://andrescultori.pages.dev",
+    pageUrl: "https://andrescultori.pages.dev/projeto/demo/",
+    social: {},
+  });
+  assertSupabaseConfigLoadsBeforeDependents(html, "dist/projeto/<slug>/index.html");
 });
