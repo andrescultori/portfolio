@@ -226,5 +226,26 @@
     "commercial": false,
     "featured": false,
     "sortOrder": 10
+  },
+  {
+    "slug": "onica-perfumaria",
+    "title": "Ônica Perfumaria — Formulário de Identidade Olfativa",
+    "cardImage": "",
+    "screenshots": [],
+    "description": {
+      "pt": "Formulário público em 6 etapas para clientes da Ônica Perfumaria descreverem sua identidade olfativa (dados, questionário, revisão e consentimento LGPD), com painel admin para a equipe buscar, filtrar, exportar em CSV e analisar cada resposta. O envio público passa por uma Edge Function com validação, honeypot anti-robô e gravação via service role — o navegador nunca grava direto no banco.",
+      "en": "Public 6-step form for Ônica Perfumaria's clients to describe their scent identity (personal data, questionnaire, review and LGPD consent), plus an admin panel for staff to search, filter, export to CSV, and review each response. Public submissions go through an Edge Function with validation and an anti-bot honeypot, writing via service role — the browser never writes to the database directly."
+    },
+    "stack": ["React", "TypeScript", "Vite", "Supabase", "Resend"],
+    "links": {
+      "github": "https://github.com/andrescultori/onica-perfumaria"
+    },
+    "note": {
+      "pt": "Sistema real para uma cliente — acesso ao painel admin restrito por allowlist (RLS), sem link de demonstração pública.",
+      "en": "Real system built for a client — admin panel access restricted by an allowlist (RLS), no public demo link."
+    },
+    "commercial": true,
+    "featured": false,
+    "sortOrder": 11
   }
 ]
