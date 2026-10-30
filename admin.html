@@ -271,6 +271,19 @@
               <input type="url" id="s-link-instagram" placeholder="https://www.instagram.com/...">
               <button type="button" class="btn btn-ghost-light btn-sm" data-restore="s-link-instagram" style="margin-top:6px;">Restaurar padrão</button>
             </div>
+
+            <div class="form-field full">
+              <label>Indicadores (KPIs) da faixa de métricas</label>
+              <p class="form-hint">
+                Até 6 indicadores. Prefixo/sufixo: até 3 caracteres, só entre ~ + % x k M h (ou vazio).
+              </p>
+              <div id="s-metrics-list" class="metrics-editor"></div>
+              <div style="display:flex; gap:10px; margin-top:10px;">
+                <button type="button" class="btn btn-ghost-light btn-sm" id="s-metrics-add">+ Adicionar indicador</button>
+                <button type="button" class="btn btn-ghost-light btn-sm" id="s-metrics-restore">Restaurar padrão</button>
+              </div>
+              <p class="form-hint" id="s-metrics-status" role="status" aria-live="polite"></p>
+            </div>
           </div>
 
           <div class="admin-form-actions">

@@ -198,27 +198,18 @@ const SITE_SETTINGS_TEXT_KEYS = [
 ];
 
 async function applySiteSettingsOverrides() {
-  try {
-    const res = await fetch(
-      `${SUPABASE_URL}/rest/v1/portfolio_site_settings?select=i18n_overrides&id=eq.1&limit=1`,
-      { headers: { apikey: SUPABASE_PUBLISHABLE_KEY }, cache: "no-store" }
-    );
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const rows = await res.json();
-    const overrides = rows && rows[0] && rows[0].i18n_overrides;
-    if (!overrides || typeof overrides !== "object") return;
+  const row = await getSiteSettings();
+  const overrides = row && row.i18n_overrides;
+  if (!overrides || typeof overrides !== "object") return;
 
-    ["pt", "en"].forEach((lang) => {
-      const langOverrides = overrides[lang];
-      if (!langOverrides || typeof langOverrides !== "object") return;
-      SITE_SETTINGS_TEXT_KEYS.forEach((key) => {
-        const value = langOverrides[key];
-        if (typeof value === "string" && value.trim()) {
-          I18N[lang][key] = value.trim();
-        }
-      });
+  ["pt", "en"].forEach((lang) => {
+    const langOverrides = overrides[lang];
+    if (!langOverrides || typeof langOverrides !== "object") return;
+    SITE_SETTINGS_TEXT_KEYS.forEach((key) => {
+      const value = langOverrides[key];
+      if (typeof value === "string" && value.trim()) {
+        I18N[lang][key] = value.trim();
+      }
     });
-  } catch (err) {
-    // Network/Supabase failure: silently keep the built-in defaults.
-  }
+  });
 }

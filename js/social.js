@@ -53,34 +53,24 @@ function applyHeroPhoto(photoUrl) {
 }
 
 async function applySiteSettingsSocial() {
-  try {
-    const res = await fetch(
-      `${SUPABASE_URL}/rest/v1/portfolio_site_settings?select=photo_path,links,updated_at&id=eq.1&limit=1`,
-      { headers: { apikey: SUPABASE_PUBLISHABLE_KEY }, cache: "no-store" }
-    );
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const rows = await res.json();
-    const row = rows && rows[0];
-    if (!row) return;
+  const row = await getSiteSettings();
+  if (!row) return;
 
-    const rawLinks = row.links && typeof row.links === "object" ? row.links : {};
-    applySocialLinks({
-      github: isHttpsUrl(rawLinks.github) ? rawLinks.github : SOCIAL_LINKS.github,
-      linkedin: isHttpsUrl(rawLinks.linkedin) ? rawLinks.linkedin : SOCIAL_LINKS.linkedin,
-      instagram: isHttpsUrl(rawLinks.instagram) ? rawLinks.instagram : SOCIAL_LINKS.instagram,
-    });
+  const rawLinks = row.links && typeof row.links === "object" ? row.links : {};
+  applySocialLinks({
+    github: isHttpsUrl(rawLinks.github) ? rawLinks.github : SOCIAL_LINKS.github,
+    linkedin: isHttpsUrl(rawLinks.linkedin) ? rawLinks.linkedin : SOCIAL_LINKS.linkedin,
+    instagram: isHttpsUrl(rawLinks.instagram) ? rawLinks.instagram : SOCIAL_LINKS.instagram,
+  });
 
-    if (row.photo_path) {
-      const base = SUPABASE_URL.replace(/\/+$/, "");
-      const cleanPath = String(row.photo_path).replace(/^\/+/, "");
-      const version = row.updated_at ? encodeURIComponent(new Date(row.updated_at).getTime()) : "";
-      const url = `${base}/storage/v1/object/public/${SITE_SETTINGS_STORAGE_BUCKET}/${cleanPath}${
-        version ? `?v=${version}` : ""
-      }`;
-      applyHeroPhoto(url);
-    }
-  } catch (err) {
-    // Network/Supabase failure: silently keep the defaults already applied.
+  if (row.photo_path) {
+    const base = SUPABASE_URL.replace(/\/+$/, "");
+    const cleanPath = String(row.photo_path).replace(/^\/+/, "");
+    const version = row.updated_at ? encodeURIComponent(new Date(row.updated_at).getTime()) : "";
+    const url = `${base}/storage/v1/object/public/${SITE_SETTINGS_STORAGE_BUCKET}/${cleanPath}${
+      version ? `?v=${version}` : ""
+    }`;
+    applyHeroPhoto(url);
   }
 }
 
