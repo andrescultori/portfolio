@@ -178,6 +178,31 @@ test("motionConfigClassNames emits motion-<kebab> only for true flags", () => {
   assert.equal(JSON.stringify(names), JSON.stringify(["motion-rotate-headline", "motion-tools-marquee"]));
 });
 
+// --- shouldForceRevealFallback --------------------------------------------
+
+test("shouldForceRevealFallback is true only when motion-ready never landed", () => {
+  assert.equal(sandbox.shouldForceRevealFallback(false), true);
+  assert.equal(sandbox.shouldForceRevealFallback(true), false);
+});
+
+// --- getRevealObserver (on-demand creation) -------------------------------
+
+test("getRevealObserver forces reveal-fallback immediately when IntersectionObserver is unsupported", () => {
+  // This sandbox has no IntersectionObserver (see loadMotionSandbox), so
+  // calling it should add the fallback class right away rather than make
+  // the <head> script's 1.5s timer the only way content ever becomes visible.
+  assert.equal(sandbox.document.documentElement.classList.contains("reveal-fallback"), false);
+  const observer = sandbox.getRevealObserver();
+  assert.equal(observer, null);
+  assert.equal(sandbox.document.documentElement.classList.contains("reveal-fallback"), true);
+});
+
+test("getRevealObserver caches its result instead of recomputing on every call", () => {
+  const first = sandbox.getRevealObserver();
+  const second = sandbox.getRevealObserver();
+  assert.equal(first, second);
+});
+
 test("the real MOTION_CONFIG only has boolean flags, one per effect", () => {
   const config = sandbox.MOTION_CONFIG;
   assert.ok(config && Object.keys(config).length >= 10);

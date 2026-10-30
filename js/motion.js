@@ -83,6 +83,14 @@ function shouldRetypeOnLangChange(prevText, nextText) {
   return typeof nextText === "string" && nextText !== prevText;
 }
 
+/** Whether the <head> inline script's 1.5s safety timeout should force
+   reveal-fallback — only when motion.js's bootstrap never finished (i.e.
+   "motion-ready" never got added to <html>). The inline script duplicates
+   this exact check by hand (it must run before motion.js has loaded). */
+function shouldForceRevealFallback(hasMotionReadyClass) {
+  return !hasMotionReadyClass;
+}
+
 function kebabCase(str) {
   return str.replace(/([a-z0-9])([A-Z])/g, "$1-$2").toLowerCase();
 }
@@ -122,7 +130,34 @@ if (MOTION_CONFIG.viewTransitions && !isReducedMotion) {
 
 // -- Scroll reveal --
 
-let revealObserver = null;
+let revealObserver; // undefined = not created yet; null = no IO support
+
+/** Lazily creates the shared reveal IntersectionObserver on first use,
+   instead of requiring initScrollReveal() to have run first — the
+   "motion:grid-rendered" listener can otherwise fire before DOMContentLoaded
+   and find no observer, revealing cards outright instead of on scroll. */
+function getRevealObserver() {
+  if (revealObserver !== undefined) return revealObserver;
+  if (typeof IntersectionObserver === "undefined") {
+    // No way to reveal on scroll in this browser — show everything now
+    // rather than waiting on the <head> script's 1.5s safety timeout.
+    document.documentElement.classList.add("reveal-fallback");
+    revealObserver = null;
+    return null;
+  }
+  revealObserver = new IntersectionObserver(
+    (entries, obs) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add("is-visible");
+          obs.unobserve(entry.target);
+        }
+      });
+    },
+    { threshold: 0.12 }
+  );
+  return revealObserver;
+}
 
 function groupByParent(nodeList) {
   const groups = [];
@@ -139,11 +174,27 @@ function groupByParent(nodeList) {
   return groups;
 }
 
+function isAlreadyOnScreen(el) {
+  try {
+    return el.getBoundingClientRect().top < window.innerHeight;
+  } catch (e) {
+    return false;
+  }
+}
+
 function revealElementsWithStagger(elements, observer) {
   elements.forEach((el, i) => {
     el.style.transitionDelay = `${Math.min(i * 70, 420)}ms`;
-    if (observer) observer.observe(el);
-    else el.classList.add("is-visible");
+    if (isAlreadyOnScreen(el)) {
+      // Already in (or scrolled past) the viewport: reveal now, with the
+      // stagger, instead of waiting on an async IO round trip that would
+      // otherwise cause a visible flash for content the user already sees.
+      requestAnimationFrame(() => el.classList.add("is-visible"));
+    } else if (observer) {
+      observer.observe(el);
+    } else {
+      el.classList.add("is-visible");
+    }
   });
 }
 
@@ -151,26 +202,17 @@ function revealImmediately(elements) {
   elements.forEach((el) => el.classList.add("is-visible"));
 }
 
-function setupRevealObserver() {
-  if (typeof IntersectionObserver === "undefined") return null;
-  return new IntersectionObserver(
-    (entries, obs) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting) {
-          entry.target.classList.add("is-visible");
-          obs.unobserve(entry.target);
-        }
-      });
-    },
-    { threshold: 0.12 }
-  );
-}
-
 function initScrollReveal() {
-  if (!MOTION_CONFIG.scrollReveal) return;
-  revealObserver = setupRevealObserver();
-  const targets = document.querySelectorAll("[data-reveal]:not(#project-grid [data-reveal])");
-  groupByParent(targets).forEach((group) => revealElementsWithStagger(group, revealObserver));
+  // Includes #project-grid's own [data-reveal] cards: the prerendered
+  // static cards sit there from first paint, before main.js's fetch even
+  // resolves, and must reveal on scroll like everything else in that gap.
+  const targets = document.querySelectorAll("[data-reveal]");
+  if (!MOTION_CONFIG.scrollReveal) {
+    revealImmediately(targets);
+    return;
+  }
+  const observer = getRevealObserver();
+  groupByParent(targets).forEach((group) => revealElementsWithStagger(group, observer));
 }
 
 function fadeGrid(grid) {
@@ -190,8 +232,9 @@ document.addEventListener("motion:grid-rendered", (e) => {
   const initial = !!(e.detail && e.detail.initial);
 
   if (initial) {
-    if (MOTION_CONFIG.scrollReveal && revealObserver) {
-      groupByParent(cards).forEach((group) => revealElementsWithStagger(group, revealObserver));
+    if (MOTION_CONFIG.scrollReveal) {
+      const observer = getRevealObserver();
+      groupByParent(cards).forEach((group) => revealElementsWithStagger(group, observer));
     } else {
       revealImmediately(cards);
     }
@@ -525,6 +568,9 @@ function initMotion() {
   initHeaderShrink();
   initScrollProgressBar();
   initHeadlineTypewriter();
+  // Tells the <head> inline script's safety timeout that bootstrap
+  // finished — it only forces reveal-fallback if this never got added.
+  document.documentElement.classList.add("motion-ready");
 }
 
 document.addEventListener("DOMContentLoaded", initMotion);

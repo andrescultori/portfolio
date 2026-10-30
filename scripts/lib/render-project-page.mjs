@@ -125,7 +125,9 @@ export function renderProjectPage({ project, siteUrl, pageUrl, social }) {
     (function () {
       document.documentElement.classList.add("js");
       setTimeout(function () {
-        document.documentElement.classList.add("reveal-fallback");
+        if (!document.documentElement.classList.contains("motion-ready")) {
+          document.documentElement.classList.add("reveal-fallback");
+        }
       }, 1500);
     })();
   </script>`;
