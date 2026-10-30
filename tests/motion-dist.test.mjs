@@ -88,3 +88,36 @@ test("renderProjectPage renders no figure for an unrelated slug", () => {
 test("renderProjectFigure returns '' for slugs without a figure", () => {
   assert.equal(renderProjectFigure("nonexistent-slug"), "");
 });
+
+// --- reveal-fallback safety timeout must be conditional on motion-ready ---
+
+/* Regression test for the bug where the <head> inline script added
+   "reveal-fallback" unconditionally after 1.5s, forcing opacity:1 on every
+   [data-reveal] element site-wide and silently killing scroll reveal for
+   anything below the fold. The timeout must only act when motion.js's
+   bootstrap never finished (checked via the "motion-ready" class). */
+function assertConditionalRevealFallback(html, label) {
+  const scriptMatch = html.match(/document\.documentElement\.classList\.add\("js"\);[\s\S]*?<\/script>/);
+  assert.ok(scriptMatch, `${label}: safety inline script not found`);
+  const script = scriptMatch[0];
+  assert.ok(script.includes('classList.contains("motion-ready")'), `${label}: timeout isn't gated on motion-ready`);
+  assert.ok(
+    /if\s*\(\s*!document\.documentElement\.classList\.contains\("motion-ready"\)\s*\)\s*\{\s*document\.documentElement\.classList\.add\("reveal-fallback"\);/.test(
+      script
+    ),
+    `${label}: reveal-fallback is still added unconditionally inside the timeout`
+  );
+}
+
+test("index.html/contato.html/projeto.html only force reveal-fallback when motion-ready never landed", () => {
+  ["index.html", "contato.html", "projeto.html"].forEach((file) => {
+    const html = readFileSync(path.join(REPO_ROOT, file), "utf8");
+    assertConditionalRevealFallback(html, file);
+  });
+});
+
+test("renderProjectPage's static page also gates reveal-fallback on motion-ready", () => {
+  const project = fixtureProject("algum-outro-projeto");
+  const { html } = renderProjectPage({ project, siteUrl: "https://example.com", pageUrl: "https://example.com/projeto/algum-outro-projeto/", social: {} });
+  assertConditionalRevealFallback(html, "render-project-page.mjs output");
+});
