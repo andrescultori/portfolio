@@ -10,8 +10,18 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/styles.css">
+  <script>
+    (function () {
+      document.documentElement.classList.add("js");
+      setTimeout(function () {
+        document.documentElement.classList.add("reveal-fallback");
+      }, 1500);
+    })();
+  </script>
 </head>
 <body>
+
+  <div class="reading-progress" aria-hidden="true"><div class="reading-progress-bar" id="reading-progress-bar"></div></div>
 
   <header class="site-header">
     <div class="wrap">
@@ -40,7 +50,7 @@
 
   <section class="contact-body">
     <div class="wrap contact-layout">
-      <form id="contact-form" novalidate>
+      <form id="contact-form" novalidate data-reveal>
         <div class="form-field">
           <label for="name" data-i18n="contact_name">Nome</label>
           <input type="text" id="name" name="name" required>
@@ -59,7 +69,7 @@
         <p class="form-status" id="form-status"></p>
       </form>
 
-      <aside class="contact-card">
+      <aside class="contact-card" data-reveal>
         <h4 data-i18n="contact_channels">Outros canais</h4>
         <ul class="contact-list">
           <li>
@@ -119,5 +129,6 @@
   <script src="js/i18n.js"></script>
   <script src="js/social.js"></script>
   <script src="js/contact.js"></script>
+  <script src="js/motion.js" defer></script>
 </body>
 </html>

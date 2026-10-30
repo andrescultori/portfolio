@@ -12,6 +12,21 @@ const I18N = {
     hero_linkedin: "LinkedIn",
     hero_github: "GitHub",
     hero_contact: "Contato",
+    hero_rotate_1: "Analista de BI",
+    hero_rotate_2: "Especialista em Automação",
+    hero_rotate_3: "Analista de RevOps",
+    metric_make_label: "cenários (Make.com)",
+    metric_make_full: "10+ cenários (Make.com)",
+    metric_tools_label: "ferramentas integradas",
+    metric_tools_full: "10+ ferramentas integradas",
+    metric_ops_label: "menos operações manuais",
+    metric_ops_full: "~80% menos operações manuais",
+    metric_years_label: "anos gerindo processos e pessoas",
+    metric_years_full: "15+ anos gerindo processos e pessoas",
+    figure_processo_seletivo_label:
+      "Diagrama: Make.com no centro, conectado a Tally, Kommo, ClickUp, Google Sheets e E-mail/Documentos.",
+    figure_dashboard_financeiro_label: "Ilustração de um mini-gráfico de barras do dashboard financeiro.",
+    figure_demo_data_caption: "Ilustração, dados fictícios.",
     filter_stack: "Stack",
     filter_all: "Todas",
     projects_title: "Projetos",
@@ -59,6 +74,21 @@ const I18N = {
     hero_linkedin: "LinkedIn",
     hero_github: "GitHub",
     hero_contact: "Contact",
+    hero_rotate_1: "BI Analyst",
+    hero_rotate_2: "Automation Specialist",
+    hero_rotate_3: "RevOps Analyst",
+    metric_make_label: "scenarios (Make.com)",
+    metric_make_full: "10+ scenarios (Make.com)",
+    metric_tools_label: "integrated tools",
+    metric_tools_full: "10+ integrated tools",
+    metric_ops_label: "fewer manual operations",
+    metric_ops_full: "~80% fewer manual operations",
+    metric_years_label: "years managing processes and people",
+    metric_years_full: "15+ years managing processes and people",
+    figure_processo_seletivo_label:
+      "Diagram: Make.com at the center, connected to Tally, Kommo, ClickUp, Google Sheets, and Email/Documents.",
+    figure_dashboard_financeiro_label: "Illustration of a mini bar chart from the financial dashboard.",
+    figure_demo_data_caption: "Illustration, fictional data.",
     filter_stack: "Stack",
     filter_all: "All",
     projects_title: "Projects",
@@ -114,6 +144,9 @@ function t(key) {
 
 function applyStaticI18n() {
   document.querySelectorAll("[data-i18n]").forEach((el) => {
+    // js/motion.js owns the text of the typewriter element directly —
+    // overwriting it here would destroy its internal caret/animation markup.
+    if (el.hasAttribute("data-typewriter")) return;
     const key = el.getAttribute("data-i18n");
     el.textContent = t(key);
   });
@@ -128,6 +161,7 @@ function applyStaticI18n() {
   document.querySelectorAll(".lang-toggle button").forEach((btn) => {
     btn.classList.toggle("is-active", btn.dataset.lang === getLang());
   });
+  document.dispatchEvent(new CustomEvent("i18n:applied", { detail: { lang: getLang() } }));
 }
 
 function initLangToggle(onChange) {
@@ -145,6 +179,7 @@ function initLangToggle(onChange) {
   // A failed/slow fetch just means the page keeps showing the defaults.
   applySiteSettingsOverrides().then(() => {
     applyStaticI18n();
+    document.dispatchEvent(new CustomEvent("i18n:overrides-settled", { detail: { lang: getLang() } }));
   });
 }
 

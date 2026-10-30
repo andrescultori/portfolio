@@ -47,7 +47,7 @@ export function renderCardHtml(project) {
     ? `<a href="${escapeHtml(project.links.github)}" target="_blank" rel="noopener">${ICON_GITHUB} ${PT.link_github}</a>`
     : "";
 
-  return `<article class="card">
+  return `<article class="card" data-reveal>
     ${media}
     <div class="card-body">
       ${inlineBadge}

@@ -16,6 +16,71 @@ function escapeHtmlP(str) {
   return div.innerHTML;
 }
 
+/* Mirrors scripts/lib/project-figures.mjs (Node module, can't be imported
+   from this browser classic script). Keep both in sync by hand: same
+   slugs, same markup shape, same "figure-pulse-path"/"figure-bar" classes
+   that js/motion.js's CSS/IO hooks key off of. */
+function projectFigureHtml(slug) {
+  if (slug === "processo-seletivo") return processoSeletivoFigureHtml();
+  if (slug === "dashboard-financeiro") return dashboardFinanceiroFigureHtml();
+  return "";
+}
+
+function processoSeletivoFigureHtml() {
+  const nodes = [
+    { label: "Tally", x: 70, y: 40 },
+    { label: "Kommo", x: 230, y: 40 },
+    { label: "ClickUp", x: 260, y: 140 },
+    { label: "Google Sheets", x: 150, y: 190 },
+    { label: "E-mail/Documentos", x: 40, y: 140 },
+  ];
+  const cx = 150;
+  const cy = 100;
+  const lines = nodes
+    .map(
+      (n, i) =>
+        `<line class="figure-pulse-path" style="animation-delay:${i * 0.6}s" x1="${cx}" y1="${cy}" x2="${n.x}" y2="${n.y}"/>`
+    )
+    .join("");
+  const satellites = nodes
+    .map(
+      (n) => `<g>
+        <circle cx="${n.x}" cy="${n.y}" r="20" class="figure-node"/>
+        <text x="${n.x}" y="${n.y + 34}" class="figure-node-label" text-anchor="middle">${escapeHtmlP(n.label)}</text>
+      </g>`
+    )
+    .join("");
+  return `<svg class="figure-svg figure-star" viewBox="0 0 300 220" role="img" aria-label="${escapeHtmlP(
+    t("figure_processo_seletivo_label")
+  )}">
+    <g class="figure-lines" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="6 10">${lines}</g>
+    <circle cx="${cx}" cy="${cy}" r="28" class="figure-node figure-node--center"/>
+    <text x="${cx}" y="${cy + 5}" class="figure-node-label figure-node-label--center" text-anchor="middle">Make.com</text>
+    ${satellites}
+  </svg>`;
+}
+
+function dashboardFinanceiroFigureHtml() {
+  const bars = [38, 62, 46, 80, 58, 70];
+  const barWidth = 26;
+  const gap = 12;
+  const chartHeight = 100;
+  const bodyHtml = bars
+    .map((h, i) => {
+      const x = i * (barWidth + gap);
+      const y = chartHeight - h;
+      return `<rect class="figure-bar" style="transition-delay:${i * 0.08}s" x="${x}" y="${y}" width="${barWidth}" height="${h}" rx="3"/>`;
+    })
+    .join("");
+  const width = bars.length * (barWidth + gap) - gap;
+  return `<figure class="figure-wrap">
+    <svg class="figure-svg figure-bars" viewBox="0 0 ${width} ${chartHeight}" role="img" aria-label="${escapeHtmlP(
+    t("figure_dashboard_financeiro_label")
+  )}">${bodyHtml}</svg>
+    <p class="figure-caption">${escapeHtmlP(t("figure_demo_data_caption"))}</p>
+  </figure>`;
+}
+
 function renderProject(project) {
   const lang = getLang();
   const desc = project.description[lang] || project.description.pt || "";
@@ -66,6 +131,9 @@ function renderProject(project) {
   } else {
     noteEl.style.display = "none";
   }
+
+  const figureHost = document.getElementById("project-figure");
+  if (figureHost) figureHost.innerHTML = projectFigureHtml(project.slug);
 
   const shotSection = document.getElementById("screenshots-section");
   const shotGrid = document.getElementById("shot-grid");

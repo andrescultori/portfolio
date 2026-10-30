@@ -2,6 +2,7 @@
 
 let ALL_PROJECTS = [];
 let ACTIVE_STACK = null;
+let HAS_RENDERED_ONCE = false;
 
 function iconSvg(name) {
   const icons = {
@@ -59,6 +60,7 @@ function projectCard(project) {
 
   const card = document.createElement("article");
   card.className = "card";
+  card.setAttribute("data-reveal", "");
 
   if (project.cardImage) {
     const mediaLink = document.createElement("a");
@@ -115,8 +117,29 @@ function projectCard(project) {
   return card;
 }
 
+/* Builds the scrolling tools marquee from the same stack data as the filter
+   chips — never a hand-written tool list. Purely decorative (aria-hidden),
+   so the content is duplicated for a seamless CSS loop; js/motion.js owns
+   the actual scroll/pause/reduced-motion animation, not this function. */
+function renderToolsMarquee(projects) {
+  const track = document.getElementById("tools-marquee-track");
+  if (!track) return;
+  const counts = new Map();
+  projects.forEach((p) => p.stack.forEach((tech) => counts.set(tech, (counts.get(tech) || 0) + 1)));
+  const tools = Array.from(counts, ([tech, count]) => ({ tech, count })).sort(
+    (a, b) => b.count - a.count || a.tech.localeCompare(b.tech)
+  );
+  if (tools.length === 0) {
+    track.innerHTML = "";
+    return;
+  }
+  const itemsHtml = tools.map(({ tech }) => `<span class="marquee-item">${escapeHtml(tech)}</span>`).join("");
+  track.innerHTML = `<span class="marquee-set">${itemsHtml}</span><span class="marquee-set">${itemsHtml}</span>`;
+}
+
 function render() {
   renderStackFilter(ALL_PROJECTS);
+  renderToolsMarquee(ALL_PROJECTS);
 
   const visible =
     ACTIVE_STACK === null ? ALL_PROJECTS : ALL_PROJECTS.filter((p) => p.stack.includes(ACTIVE_STACK));
@@ -149,6 +172,10 @@ function render() {
     visible.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
     visible.forEach((p) => grid.appendChild(projectCard(p)));
   }
+
+  const initial = !HAS_RENDERED_ONCE;
+  HAS_RENDERED_ONCE = true;
+  document.dispatchEvent(new CustomEvent("motion:grid-rendered", { detail: { initial } }));
 }
 
 async function init() {
