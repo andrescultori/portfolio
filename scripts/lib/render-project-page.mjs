@@ -236,6 +236,7 @@ ${enBlock}
   </div>
 
   <script src="../../js/supabase-config.js"></script>
+  <script src="../../js/site-data.js"></script>
   <script src="../../js/i18n.js"></script>
   <script src="../../js/social.js"></script>
   <script src="../../js/projects-data.js"></script>

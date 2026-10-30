@@ -203,6 +203,44 @@ test("getRevealObserver caches its result instead of recomputing on every call",
   assert.equal(first, second);
 });
 
+// --- metrics (KPI strip) validation — mirrors scripts/lib/site-settings.mjs ---
+
+function validMetric(overrides) {
+  return { value: 10, prefix: "", suffix: "+", label: { pt: "Rótulo", en: "Label" }, visible: true, ...overrides };
+}
+
+test("motion.js's filterMetrics matches the Node-side contract: null on empty/invalid, caps at 6", () => {
+  assert.equal(sandbox.filterMetrics([]), null);
+  assert.equal(sandbox.filterMetrics(null), null);
+  const capped = sandbox.filterMetrics(Array.from({ length: 8 }, (_, i) => validMetric({ value: i })));
+  assert.equal(capped.length, 6);
+});
+
+test("motion.js's filterMetrics rejects bad values/affixes/labels the same way as the Node version", () => {
+  const result = sandbox.filterMetrics([
+    validMetric({ value: -1 }),
+    validMetric({ prefix: "$" }),
+    validMetric({ label: { pt: "x".repeat(41), en: "ok" } }),
+    validMetric({ value: 42 }),
+  ]);
+  assert.equal(JSON.stringify(Array.from(result, (m) => m.value)), JSON.stringify([42]));
+});
+
+test("desiredMetricsSignature drops hidden items and keeps only the comparable fields", () => {
+  const sig = sandbox.desiredMetricsSignature([
+    validMetric({ value: 1 }),
+    validMetric({ value: 2, visible: false }),
+  ]);
+  assert.equal(JSON.stringify(Array.from(sig)), JSON.stringify([{ value: 1, prefix: "", suffix: "+", labelPt: "Rótulo" }]));
+});
+
+test("metricsSignaturesEqual compares by value, not by reference", () => {
+  const a = [{ value: 1, prefix: "", suffix: "+", labelPt: "x" }];
+  const b = [{ value: 1, prefix: "", suffix: "+", labelPt: "x" }];
+  assert.equal(sandbox.metricsSignaturesEqual(a, b), true);
+  assert.equal(sandbox.metricsSignaturesEqual(a, [{ value: 2, prefix: "", suffix: "+", labelPt: "x" }]), false);
+});
+
 test("the real MOTION_CONFIG only has boolean flags, one per effect", () => {
   const config = sandbox.MOTION_CONFIG;
   assert.ok(config && Object.keys(config).length >= 10);

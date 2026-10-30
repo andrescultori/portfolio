@@ -22,6 +22,7 @@ import {
   replaceHrefById,
   replaceImgSrcById,
   replaceTextById,
+  substituteMetrics,
 } from "./lib/site-settings.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -182,6 +183,11 @@ async function main() {
     throw new Error(`Marcador ${NOSCRIPT_MARKER} não encontrado em index.html.`);
   }
   indexHtml = indexHtml.replace(NOSCRIPT_MARKER, renderNoscriptList(projects));
+
+  // Metrics strip (home KPIs): only replaces the 4 built-in defaults when
+  // there's a valid override — a no-op (returns indexHtml unchanged)
+  // otherwise, so this never risks blanking the strip.
+  indexHtml = substituteMetrics(indexHtml, siteSettings ? siteSettings.metrics : null);
 
   // Site settings: text overrides (PT, no-op where a key doesn't appear on
   // this page), social hrefs, and the hero photo.

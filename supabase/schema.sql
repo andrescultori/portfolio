@@ -127,6 +127,7 @@ create table public.portfolio_site_settings (
   photo_path text,
   links jsonb not null default '{}'::jsonb,
   i18n_overrides jsonb not null default '{}'::jsonb,
+  metrics jsonb not null default '[]'::jsonb,
   updated_at timestamptz not null default now(),
   constraint portfolio_site_settings_single_row check (id = 1)
 );
@@ -142,6 +143,9 @@ comment on column public.portfolio_site_settings.links is
 
 comment on column public.portfolio_site_settings.i18n_overrides is
   'Optional overrides shaped as {"pt": {key: text}, "en": {key: text}}. Only keys in the code-side whitelist (hero_role, hero_bio, projects_title, projects_subtitle, contact_title, contact_subtitle, footer_tagline) are ever read — any other key is ignored by every consumer (js/i18n.js, scripts/build.mjs).';
+
+comment on column public.portfolio_site_settings.metrics is
+  'Optional override for the home page''s metrics strip (up to 6 items): [{"value": integer, "prefix": text, "suffix": text, "label": {"pt": text, "en": text}, "visible": boolean}]. An empty array (the default) or missing/invalid data means "no override" — every reader (js/motion.js, scripts/build.mjs) falls back to the 4 built-in defaults.';
 
 insert into public.portfolio_site_settings (id) values (1)
 on conflict (id) do nothing;

@@ -17,6 +17,13 @@ export const SITE_SETTINGS_TEXT_KEYS = [
 
 export const SITE_SETTINGS_LINK_KEYS = ["github", "linkedin", "instagram"];
 
+/* Metrics strip (home page KPIs) — mirrored by hand in js/motion.js
+   (browser classic script, can't import this Node module). */
+export const SITE_SETTINGS_METRICS_MAX = 6;
+export const METRIC_VALUE_MAX = 999999;
+export const METRIC_LABEL_MAX = 40;
+export const METRIC_AFFIX_PATTERN = /^[~+%xkMh]{0,3}$/;
+
 /* Keeps only whitelisted keys with a non-empty string value. An empty
    string (or a missing key) means "no override" — that's how "Restaurar
    padrão" in the admin panel works: it just clears the field. */
@@ -51,6 +58,88 @@ export function filterLinks(rawLinks) {
     }
   }
   return result;
+}
+
+function isValidMetricItem(raw) {
+  if (!raw || typeof raw !== "object") return false;
+  if (!Number.isInteger(raw.value) || raw.value < 0 || raw.value > METRIC_VALUE_MAX) return false;
+  const prefix = raw.prefix ?? "";
+  const suffix = raw.suffix ?? "";
+  if (typeof prefix !== "string" || !METRIC_AFFIX_PATTERN.test(prefix)) return false;
+  if (typeof suffix !== "string" || !METRIC_AFFIX_PATTERN.test(suffix)) return false;
+  const label = raw.label;
+  if (!label || typeof label !== "object") return false;
+  const labelPt = label.pt ?? "";
+  const labelEn = label.en ?? "";
+  if (typeof labelPt !== "string" || labelPt.length > METRIC_LABEL_MAX) return false;
+  if (typeof labelEn !== "string" || labelEn.length > METRIC_LABEL_MAX) return false;
+  return true;
+}
+
+function sanitizeMetricItem(raw) {
+  return {
+    value: raw.value,
+    prefix: raw.prefix ?? "",
+    suffix: raw.suffix ?? "",
+    label: { pt: (raw.label.pt ?? "").trim(), en: (raw.label.en ?? "").trim() },
+    visible: raw.visible !== false,
+  };
+}
+
+/* Validates/cleans the metrics-strip override: drops individually invalid
+   items (never the whole array for one bad entry — same discard-don't-fail
+   precedent as link validation elsewhere in this build), caps at
+   SITE_SETTINGS_METRICS_MAX. Returns null — "no override, use the code's 4
+   defaults" — when the input is empty, not an array, or every item turned
+   out invalid, exactly like "Restaurar padrão" clearing other fields. */
+export function filterMetrics(rawMetrics) {
+  if (!Array.isArray(rawMetrics) || rawMetrics.length === 0) return null;
+  const cleaned = rawMetrics.filter(isValidMetricItem).slice(0, SITE_SETTINGS_METRICS_MAX).map(sanitizeMetricItem);
+  return cleaned.length ? cleaned : null;
+}
+
+/* Builds the metrics-strip's inner HTML (the <div class="metric"> items)
+   from an override array — only called when filterMetrics() didn't return
+   null. Hidden items (visible: false) are simply not rendered. Composes
+   the aria-label inline (prefix+value+suffix+label) instead of going
+   through the fixed I18N-table keys the 4 built-in defaults use, since
+   these are arbitrary admin-authored items — marked data-custom-metric so
+   the browser's language toggle knows to re-derive text/aria-label from
+   data-metric-label-pt/en instead of the I18N table. */
+export function renderMetricsHtml(metrics) {
+  return metrics
+    .filter((m) => m.visible)
+    .map((m) => {
+      const prefix = m.prefix || "";
+      const suffix = m.suffix || "";
+      const labelPt = (m.label && m.label.pt) || "";
+      const labelEn = (m.label && m.label.en) || "";
+      const display = `${escapeHtml(prefix)}${m.value}${escapeHtml(suffix)}`;
+      const ariaLabel = `${prefix}${m.value}${suffix} ${labelPt}`.trim();
+      return `<div class="metric" data-reveal data-custom-metric aria-label="${escapeHtml(ariaLabel)}">
+        <span class="metric-value" aria-hidden="true" data-count-to="${m.value}" data-count-prefix="${escapeHtml(prefix)}" data-count-suffix="${escapeHtml(suffix)}">${display}</span>
+        <span class="metric-label" aria-hidden="true" data-metric-label-pt="${escapeHtml(labelPt)}" data-metric-label-en="${escapeHtml(labelEn)}">${escapeHtml(labelPt)}</span>
+      </div>`;
+    })
+    .join("\n");
+}
+
+const METRICS_MARKER = /<!-- PRERENDER:METRICS:START -->[\s\S]*?<!-- PRERENDER:METRICS:END -->/;
+
+/* Replaces the <!-- PRERENDER:METRICS:START/END --> block in a prerendered
+   HTML string with freshly rendered metric items — but only when
+   metricsOverride is non-null (filterMetrics() already returned null for
+   "no override"), so the 4 built-in defaults between the markers are left
+   completely untouched otherwise. Throws if the markers are missing from
+   an override that needs applying (same contract as the CARDS/NOSCRIPT
+   markers in scripts/build.mjs) — never silently drops the override. */
+export function substituteMetrics(html, metricsOverride) {
+  if (!metricsOverride) return html;
+  if (!METRICS_MARKER.test(html)) {
+    throw new Error("Marcadores <!-- PRERENDER:METRICS:START/END --> não encontrados em index.html.");
+  }
+  const metricsHtml = renderMetricsHtml(metricsOverride);
+  return html.replace(METRICS_MARKER, `<!-- PRERENDER:METRICS:START -->\n${metricsHtml}\n<!-- PRERENDER:METRICS:END -->`);
 }
 
 /* Builds the public Storage URL for the profile photo, with a ?v=<updatedAt>
@@ -167,6 +256,7 @@ export async function fetchSiteSettings({ supabaseUrl, supabaseKey, fetchImpl, t
         photoPath: row.photo_path || "",
         links: filterLinks(row.links),
         i18nOverrides: filterI18nOverrides(row.i18n_overrides),
+        metrics: filterMetrics(row.metrics),
         updatedAt: row.updated_at || null,
       },
       source: "supabase",

@@ -79,6 +79,61 @@ function prefersReducedMotion(matchMediaFn) {
   }
 }
 
+/* Metrics-strip (home KPIs) validation — mirrors scripts/lib/site-settings.mjs's
+   filterMetrics() exactly (Node module, can't be imported from this
+   browser classic script). Keep both in sync by hand. */
+const METRIC_VALUE_MAX = 999999;
+const METRIC_LABEL_MAX = 40;
+const METRIC_AFFIX_PATTERN = /^[~+%xkMh]{0,3}$/;
+const SITE_SETTINGS_METRICS_MAX = 6;
+
+function isValidMetricItem(raw) {
+  if (!raw || typeof raw !== "object") return false;
+  if (!Number.isInteger(raw.value) || raw.value < 0 || raw.value > METRIC_VALUE_MAX) return false;
+  const prefix = raw.prefix == null ? "" : raw.prefix;
+  const suffix = raw.suffix == null ? "" : raw.suffix;
+  if (typeof prefix !== "string" || !METRIC_AFFIX_PATTERN.test(prefix)) return false;
+  if (typeof suffix !== "string" || !METRIC_AFFIX_PATTERN.test(suffix)) return false;
+  const label = raw.label;
+  if (!label || typeof label !== "object") return false;
+  const labelPt = label.pt == null ? "" : label.pt;
+  const labelEn = label.en == null ? "" : label.en;
+  if (typeof labelPt !== "string" || labelPt.length > METRIC_LABEL_MAX) return false;
+  if (typeof labelEn !== "string" || labelEn.length > METRIC_LABEL_MAX) return false;
+  return true;
+}
+
+function sanitizeMetricItem(raw) {
+  return {
+    value: raw.value,
+    prefix: raw.prefix == null ? "" : raw.prefix,
+    suffix: raw.suffix == null ? "" : raw.suffix,
+    label: { pt: (raw.label.pt == null ? "" : raw.label.pt).trim(), en: (raw.label.en == null ? "" : raw.label.en).trim() },
+    visible: raw.visible !== false,
+  };
+}
+
+/** null = no override (keep whatever is already rendered); else a clean, capped array. */
+function filterMetrics(rawMetrics) {
+  if (!Array.isArray(rawMetrics) || rawMetrics.length === 0) return null;
+  const cleaned = rawMetrics.filter(isValidMetricItem).slice(0, SITE_SETTINGS_METRICS_MAX).map(sanitizeMetricItem);
+  return cleaned.length ? cleaned : null;
+}
+
+/** Comparable {value,prefix,suffix,labelPt} shape, visible items only, for cheap equality checks. */
+function desiredMetricsSignature(metrics) {
+  return metrics.filter((m) => m.visible).map((m) => ({
+    value: m.value,
+    prefix: m.prefix || "",
+    suffix: m.suffix || "",
+    labelPt: (m.label && m.label.pt) || "",
+  }));
+}
+
+function metricsSignaturesEqual(a, b) {
+  return JSON.stringify(a) === JSON.stringify(b);
+}
+
 function shouldRetypeOnLangChange(prevText, nextText) {
   return typeof nextText === "string" && nextText !== prevText;
 }
@@ -264,9 +319,9 @@ function animateCount(el) {
   requestAnimationFrame(step);
 }
 
-function initCountUpMetrics() {
+function wireCountUpObserver(grid) {
   if (!MOTION_CONFIG.countUpMetrics || isReducedMotion) return;
-  const metrics = document.querySelectorAll(".metric-value[data-count-to]");
+  const metrics = grid.querySelectorAll(".metric-value[data-count-to]");
   if (!metrics.length || typeof IntersectionObserver === "undefined") return;
   const observer = new IntersectionObserver(
     (entries, obs) => {
@@ -279,6 +334,106 @@ function initCountUpMetrics() {
     { threshold: 0.4 }
   );
   metrics.forEach((el) => observer.observe(el));
+}
+
+function currentMetricsSignature(grid) {
+  return Array.from(grid.children).map((metricEl) => {
+    const valueEl = metricEl.querySelector(".metric-value");
+    const labelEl = metricEl.querySelector(".metric-label");
+    return {
+      value: parseInt((valueEl && valueEl.getAttribute("data-count-to")) || "0", 10) || 0,
+      prefix: (valueEl && valueEl.getAttribute("data-count-prefix")) || "",
+      suffix: (valueEl && valueEl.getAttribute("data-count-suffix")) || "",
+      labelPt: (labelEl && labelEl.textContent.trim()) || "",
+    };
+  });
+}
+
+function buildMetricElement(item, lang) {
+  const wrapper = document.createElement("div");
+  wrapper.className = "metric";
+  wrapper.setAttribute("data-reveal", "");
+  wrapper.setAttribute("data-custom-metric", "");
+
+  const prefix = item.prefix || "";
+  const suffix = item.suffix || "";
+  const labelPt = (item.label && item.label.pt) || "";
+  const labelEn = (item.label && item.label.en) || "";
+  const labelText = lang === "en" ? labelEn || labelPt : labelPt;
+
+  const valueEl = document.createElement("span");
+  valueEl.className = "metric-value";
+  valueEl.setAttribute("aria-hidden", "true");
+  valueEl.setAttribute("data-count-to", String(item.value));
+  valueEl.setAttribute("data-count-prefix", prefix);
+  valueEl.setAttribute("data-count-suffix", suffix);
+  valueEl.textContent = formatMetricDisplay(item.value, { prefix, suffix }, lang);
+
+  const labelEl = document.createElement("span");
+  labelEl.className = "metric-label";
+  labelEl.setAttribute("aria-hidden", "true");
+  labelEl.setAttribute("data-metric-label-pt", labelPt);
+  labelEl.setAttribute("data-metric-label-en", labelEn);
+  labelEl.textContent = labelText;
+
+  wrapper.appendChild(valueEl);
+  wrapper.appendChild(labelEl);
+  wrapper.setAttribute("aria-label", `${prefix}${item.value}${suffix} ${labelText}`.trim());
+  return wrapper;
+}
+
+function rebuildMetricsGrid(grid, metrics, lang) {
+  grid.innerHTML = "";
+  metrics.filter((m) => m.visible).forEach((item) => grid.appendChild(buildMetricElement(item, lang)));
+}
+
+/* Syncs the metrics strip with the live admin settings, Supabase-first with
+   the same "never break the strip" fallback as every other site-settings
+   field: a missing/empty/invalid override just leaves whatever is already
+   rendered (the build-time defaults or a previously baked override) alone.
+   Only rebuilds the DOM — and only re-wires the count-up observer — when
+   the fetched data actually differs, so an unchanged strip never
+   re-animates or loses its already-observed nodes. */
+function applySiteSettingsMetrics(grid) {
+  getSiteSettings().then((row) => {
+    const override = row ? filterMetrics(row.metrics) : null;
+    if (!override) return;
+
+    const desired = desiredMetricsSignature(override);
+    if (metricsSignaturesEqual(currentMetricsSignature(grid), desired)) return;
+
+    const lang = typeof getLang === "function" ? getLang() : "pt";
+    rebuildMetricsGrid(grid, override, lang);
+    wireCountUpObserver(grid);
+  });
+}
+
+function updateCustomMetricsLanguage() {
+  const lang = typeof getLang === "function" ? getLang() : "pt";
+  document.querySelectorAll(".metric[data-custom-metric]").forEach((metricEl) => {
+    const valueEl = metricEl.querySelector(".metric-value");
+    const labelEl = metricEl.querySelector(".metric-label");
+    if (!labelEl) return;
+    const pt = labelEl.getAttribute("data-metric-label-pt") || "";
+    const en = labelEl.getAttribute("data-metric-label-en") || "";
+    const text = lang === "en" ? en || pt : pt;
+    labelEl.textContent = text;
+    if (valueEl) {
+      const prefix = valueEl.getAttribute("data-count-prefix") || "";
+      const suffix = valueEl.getAttribute("data-count-suffix") || "";
+      const value = valueEl.getAttribute("data-count-to") || "";
+      metricEl.setAttribute("aria-label", `${prefix}${value}${suffix} ${text}`.trim());
+    }
+  });
+}
+
+document.addEventListener("i18n:applied", updateCustomMetricsLanguage);
+
+function initCountUpMetrics() {
+  const grid = document.querySelector(".metrics-grid");
+  if (!grid) return;
+  wireCountUpObserver(grid);
+  applySiteSettingsMetrics(grid);
 }
 
 // -- Project figures --

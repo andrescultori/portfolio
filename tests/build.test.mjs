@@ -504,6 +504,7 @@ test("fetchSiteSettings normalizes a real row (filters links/overrides, keeps ph
     photoPath: "site/profile.jpg",
     links: { github: "https://github.com/andrescultori" },
     i18nOverrides: { pt: { hero_role: "Novo cargo" }, en: {} },
+    metrics: null,
     updatedAt: "2026-01-01T00:00:00.000Z",
   });
 });

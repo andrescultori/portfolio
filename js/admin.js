@@ -430,8 +430,36 @@ const SITE_SETTINGS_LINK_KEYS = ["github", "linkedin", "instagram"];
 const SITE_PHOTO_MAX_BYTES = 2 * 1024 * 1024;
 const SITE_PHOTO_ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
-let SITE_SETTINGS = { photoPath: "", links: {}, i18nOverrides: { pt: {}, en: {} } };
+/* Metrics strip (home KPIs) — mirrors scripts/lib/site-settings.mjs's
+   constants and js/motion.js's validation (duplicated by hand, same as
+   every other site-settings whitelist in this codebase). DEFAULT_METRICS
+   mirrors the 4 built-in <!-- PRERENDER:METRICS --> items in index.html —
+   this is what "Restaurar padrão" below puts back into the editor. */
+const METRIC_VALUE_MAX = 999999;
+const METRIC_LABEL_MAX = 40;
+const METRIC_AFFIX_PATTERN = /^[~+%xkMh]{0,3}$/;
+const METRICS_MAX = 6;
+
+const DEFAULT_METRICS = [
+  { value: 10, prefix: "", suffix: "+", label: { pt: "cenários (Make.com)", en: "scenarios (Make.com)" }, visible: true },
+  { value: 10, prefix: "", suffix: "+", label: { pt: "ferramentas integradas", en: "integrated tools" }, visible: true },
+  { value: 80, prefix: "~", suffix: "%", label: { pt: "menos operações manuais", en: "fewer manual operations" }, visible: true },
+  {
+    value: 15,
+    prefix: "",
+    suffix: "+",
+    label: { pt: "anos gerindo processos e pessoas", en: "years managing processes and people" },
+    visible: true,
+  },
+];
+
+function cloneMetrics(metrics) {
+  return metrics.map((m) => ({ ...m, label: { ...m.label } }));
+}
+
+let SITE_SETTINGS = { photoPath: "", links: {}, i18nOverrides: { pt: {}, en: {} }, metrics: [] };
 let PENDING_PHOTO_PATH = null; // null = no pending change; "" = pending removal
+let METRICS_DRAFT = []; // working copy edited in the UI, saved only on submit
 
 function isHttpsUrlAdmin(value) {
   return typeof value === "string" && /^https:\/\//i.test(value.trim());
@@ -483,8 +511,220 @@ function populateSiteForm() {
     document.getElementById(`s-link-${key}`).value = links[key] || "";
   });
 
+  METRICS_DRAFT = SITE_SETTINGS.metrics && SITE_SETTINGS.metrics.length ? cloneMetrics(SITE_SETTINGS.metrics) : [];
+  renderMetricsRows();
+
   setStatus(document.getElementById("site-form-status"), "", "");
   clearFormDirty();
+}
+
+/* Builds one editor row for METRICS_DRAFT[index] with plain DOM APIs —
+   never innerHTML with typed/stored data, so textContent/value/label text
+   nodes are the only things that ever carry user-authored strings. */
+function buildMetricRow(item, index) {
+  const row = document.createElement("div");
+  row.className = "metrics-editor-row";
+
+  function field(className, labelText, input) {
+    const wrap = document.createElement("div");
+    wrap.className = `metrics-editor-field ${className}`;
+    const label = document.createElement("label");
+    label.textContent = labelText;
+    const inputId = `s-metric-${index}-${className.replace("metrics-editor-field--", "")}`;
+    label.setAttribute("for", inputId);
+    input.id = inputId;
+    wrap.appendChild(label);
+    wrap.appendChild(input);
+    return wrap;
+  }
+
+  const valueInput = document.createElement("input");
+  valueInput.type = "number";
+  valueInput.min = "0";
+  valueInput.max = String(METRIC_VALUE_MAX);
+  valueInput.step = "1";
+  valueInput.value = String(item.value);
+  valueInput.addEventListener("input", () => {
+    METRICS_DRAFT[index].value = valueInput.value === "" ? 0 : Math.trunc(Number(valueInput.value));
+    markFormDirty();
+  });
+
+  const prefixInput = document.createElement("input");
+  prefixInput.type = "text";
+  prefixInput.maxLength = 3;
+  prefixInput.value = item.prefix || "";
+  prefixInput.addEventListener("input", () => {
+    METRICS_DRAFT[index].prefix = prefixInput.value;
+    markFormDirty();
+  });
+
+  const suffixInput = document.createElement("input");
+  suffixInput.type = "text";
+  suffixInput.maxLength = 3;
+  suffixInput.value = item.suffix || "";
+  suffixInput.addEventListener("input", () => {
+    METRICS_DRAFT[index].suffix = suffixInput.value;
+    markFormDirty();
+  });
+
+  const labelPtInput = document.createElement("input");
+  labelPtInput.type = "text";
+  labelPtInput.maxLength = METRIC_LABEL_MAX;
+  labelPtInput.value = (item.label && item.label.pt) || "";
+  labelPtInput.addEventListener("input", () => {
+    METRICS_DRAFT[index].label.pt = labelPtInput.value;
+    markFormDirty();
+  });
+
+  const labelEnInput = document.createElement("input");
+  labelEnInput.type = "text";
+  labelEnInput.maxLength = METRIC_LABEL_MAX;
+  labelEnInput.value = (item.label && item.label.en) || "";
+  labelEnInput.addEventListener("input", () => {
+    METRICS_DRAFT[index].label.en = labelEnInput.value;
+    markFormDirty();
+  });
+
+  row.appendChild(field("metrics-editor-field--value", "Valor", valueInput));
+  row.appendChild(field("metrics-editor-field--affix", "Prefixo", prefixInput));
+  row.appendChild(field("metrics-editor-field--affix", "Sufixo", suffixInput));
+  row.appendChild(field("metrics-editor-field--label", "Rótulo (PT)", labelPtInput));
+  row.appendChild(field("metrics-editor-field--label", "Rótulo (EN)", labelEnInput));
+
+  const visibleLabel = document.createElement("label");
+  visibleLabel.className = "form-check";
+  const visibleInput = document.createElement("input");
+  visibleInput.type = "checkbox";
+  visibleInput.checked = item.visible !== false;
+  visibleInput.addEventListener("change", () => {
+    METRICS_DRAFT[index].visible = visibleInput.checked;
+    markFormDirty();
+  });
+  visibleLabel.appendChild(visibleInput);
+  visibleLabel.appendChild(document.createTextNode(" Mostrar"));
+  row.appendChild(visibleLabel);
+
+  const actions = document.createElement("div");
+  actions.className = "metrics-editor-actions";
+
+  const upBtn = document.createElement("button");
+  upBtn.type = "button";
+  upBtn.className = "btn btn-ghost-light btn-sm";
+  upBtn.textContent = "↑";
+  upBtn.setAttribute("aria-label", "Mover indicador para cima");
+  upBtn.disabled = index === 0;
+  upBtn.addEventListener("click", () => {
+    if (index === 0) return;
+    const [moved] = METRICS_DRAFT.splice(index, 1);
+    METRICS_DRAFT.splice(index - 1, 0, moved);
+    renderMetricsRows();
+    markFormDirty();
+  });
+
+  const downBtn = document.createElement("button");
+  downBtn.type = "button";
+  downBtn.className = "btn btn-ghost-light btn-sm";
+  downBtn.textContent = "↓";
+  downBtn.setAttribute("aria-label", "Mover indicador para baixo");
+  downBtn.disabled = index === METRICS_DRAFT.length - 1;
+  downBtn.addEventListener("click", () => {
+    if (index === METRICS_DRAFT.length - 1) return;
+    const [moved] = METRICS_DRAFT.splice(index, 1);
+    METRICS_DRAFT.splice(index + 1, 0, moved);
+    renderMetricsRows();
+    markFormDirty();
+  });
+
+  const removeBtn = document.createElement("button");
+  removeBtn.type = "button";
+  removeBtn.className = "btn btn-ghost-light btn-sm";
+  removeBtn.textContent = "✕";
+  removeBtn.setAttribute("aria-label", "Remover indicador");
+  removeBtn.addEventListener("click", () => {
+    METRICS_DRAFT.splice(index, 1);
+    renderMetricsRows();
+    markFormDirty();
+  });
+
+  actions.appendChild(upBtn);
+  actions.appendChild(downBtn);
+  actions.appendChild(removeBtn);
+  row.appendChild(actions);
+
+  return row;
+}
+
+function renderMetricsRows() {
+  const list = document.getElementById("s-metrics-list");
+  list.innerHTML = "";
+  if (METRICS_DRAFT.length === 0) {
+    const empty = document.createElement("p");
+    empty.className = "admin-empty";
+    empty.textContent = "Nenhum indicador — o site mostra os 4 padrões.";
+    list.appendChild(empty);
+  } else {
+    METRICS_DRAFT.forEach((item, index) => list.appendChild(buildMetricRow(item, index)));
+  }
+  document.getElementById("s-metrics-add").disabled = METRICS_DRAFT.length >= METRICS_MAX;
+  setStatus(document.getElementById("s-metrics-status"), "", "");
+}
+
+function handleMetricAdd() {
+  if (METRICS_DRAFT.length >= METRICS_MAX) return;
+  METRICS_DRAFT.push({ value: 0, prefix: "", suffix: "", label: { pt: "", en: "" }, visible: true });
+  renderMetricsRows();
+  markFormDirty();
+}
+
+function handleMetricsRestore() {
+  METRICS_DRAFT = cloneMetrics(DEFAULT_METRICS);
+  renderMetricsRows();
+  markFormDirty();
+}
+
+/* Validates METRICS_DRAFT against the same rules as
+   scripts/lib/site-settings.mjs's filterMetrics()/js/motion.js's
+   filterMetrics(), returning a clean array to save or null (+ a status
+   message already shown) on the first violation. */
+function validateMetricsDraft() {
+  const statusEl = document.getElementById("s-metrics-status");
+  if (METRICS_DRAFT.length > METRICS_MAX) {
+    setStatus(statusEl, `Máximo de ${METRICS_MAX} indicadores.`, "err");
+    return null;
+  }
+  const cleaned = [];
+  for (let i = 0; i < METRICS_DRAFT.length; i++) {
+    const item = METRICS_DRAFT[i];
+    const n = i + 1;
+    const value = Math.trunc(Number(item.value));
+    if (!Number.isInteger(value) || value < 0 || value > METRIC_VALUE_MAX) {
+      setStatus(statusEl, `Indicador ${n}: o valor precisa ser um número inteiro entre 0 e ${METRIC_VALUE_MAX}.`, "err");
+      return null;
+    }
+    const prefix = item.prefix || "";
+    const suffix = item.suffix || "";
+    if (!METRIC_AFFIX_PATTERN.test(prefix)) {
+      setStatus(statusEl, `Indicador ${n}: prefixo inválido (até 3 caracteres, só ~ + % x k M h).`, "err");
+      return null;
+    }
+    if (!METRIC_AFFIX_PATTERN.test(suffix)) {
+      setStatus(statusEl, `Indicador ${n}: sufixo inválido (até 3 caracteres, só ~ + % x k M h).`, "err");
+      return null;
+    }
+    const labelPt = ((item.label && item.label.pt) || "").trim();
+    const labelEn = ((item.label && item.label.en) || "").trim();
+    if (labelPt.length > METRIC_LABEL_MAX) {
+      setStatus(statusEl, `Indicador ${n}: rótulo (PT) passou do limite de ${METRIC_LABEL_MAX} caracteres.`, "err");
+      return null;
+    }
+    if (labelEn.length > METRIC_LABEL_MAX) {
+      setStatus(statusEl, `Indicador ${n}: rótulo (EN) passou do limite de ${METRIC_LABEL_MAX} caracteres.`, "err");
+      return null;
+    }
+    cleaned.push({ value, prefix, suffix, label: { pt: labelPt, en: labelEn }, visible: item.visible !== false });
+  }
+  setStatus(statusEl, "", "");
+  return cleaned;
 }
 
 async function loadSiteSettings() {
@@ -506,6 +746,7 @@ async function loadSiteSettings() {
     photoPath: (data && data.photo_path) || "",
     links: (data && data.links) || {},
     i18nOverrides: (data && data.i18n_overrides) || { pt: {}, en: {} },
+    metrics: (data && data.metrics) || [],
   };
   setStatus(statusEl, "", "");
   populateSiteForm();
@@ -592,12 +833,15 @@ async function handleSiteFormSubmit(e) {
     }
   }
 
+  const metrics = validateMetricsDraft();
+  if (metrics === null) return; // validateMetricsDraft() already set the error status
+
   const photoPath = PENDING_PHOTO_PATH === null ? SITE_SETTINGS.photoPath : PENDING_PHOTO_PATH;
 
   setStatus(statusEl, "Salvando…", "");
   const { error } = await supabaseClient
     .from("portfolio_site_settings")
-    .update({ photo_path: photoPath, links, i18n_overrides: i18nOverrides })
+    .update({ photo_path: photoPath, links, i18n_overrides: i18nOverrides, metrics })
     .eq("id", 1);
 
   if (error) {
@@ -618,6 +862,8 @@ function bindSiteSettingsEvents() {
   });
   document.getElementById("s-photo-upload").addEventListener("change", handlePhotoUpload);
   document.getElementById("s-photo-reset").addEventListener("click", handlePhotoReset);
+  document.getElementById("s-metrics-add").addEventListener("click", handleMetricAdd);
+  document.getElementById("s-metrics-restore").addEventListener("click", handleMetricsRestore);
   document.getElementById("site-settings-form").addEventListener("submit", handleSiteFormSubmit);
   document.getElementById("site-settings-form").addEventListener("input", markFormDirty);
   document.getElementById("site-settings-form").addEventListener("change", markFormDirty);
