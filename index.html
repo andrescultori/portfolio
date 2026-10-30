@@ -14,8 +14,18 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/styles.css">
+  <script>
+    (function () {
+      document.documentElement.classList.add("js");
+      setTimeout(function () {
+        document.documentElement.classList.add("reveal-fallback");
+      }, 1500);
+    })();
+  </script>
 </head>
 <body>
+
+  <div class="reading-progress" aria-hidden="true"><div class="reading-progress-bar" id="reading-progress-bar"></div></div>
 
   <header class="site-header">
     <div class="wrap">
@@ -43,7 +53,9 @@
       <div>
         <span class="eyebrow" data-i18n="hero_eyebrow">Portfólio</span>
         <h1>André Scultori</h1>
-        <p class="hero-role" data-i18n="hero_role">Analista de BI &amp; Automação de Processos</p>
+        <p class="hero-role" data-i18n-attr="aria-label:hero_role">
+          <span id="hero-role-type" data-i18n="hero_role" data-typewriter aria-hidden="true">Analista de BI &amp; Automação de Processos</span><span class="motion-caret" aria-hidden="true"></span>
+        </p>
         <p class="hero-bio" data-i18n="hero_bio">
           Mais de 15 anos gerindo processos e pessoas, hoje aplicando isso a dados, automação e integração de sistemas.
         </p>
@@ -66,10 +78,35 @@
     </div>
   </section>
 
+  <section class="metrics-strip">
+    <div class="wrap metrics-grid">
+      <div class="metric" data-reveal data-i18n-attr="aria-label:metric_make_full">
+        <span class="metric-value" aria-hidden="true" data-count-to="10" data-count-suffix="+">10+</span>
+        <span class="metric-label" aria-hidden="true" data-i18n="metric_make_label">cenários (Make.com)</span>
+      </div>
+      <div class="metric" data-reveal data-i18n-attr="aria-label:metric_tools_full">
+        <span class="metric-value" aria-hidden="true" data-count-to="10" data-count-suffix="+">10+</span>
+        <span class="metric-label" aria-hidden="true" data-i18n="metric_tools_label">ferramentas integradas</span>
+      </div>
+      <div class="metric" data-reveal data-i18n-attr="aria-label:metric_ops_full">
+        <span class="metric-value" aria-hidden="true" data-count-to="80" data-count-prefix="~" data-count-suffix="%">~80%</span>
+        <span class="metric-label" aria-hidden="true" data-i18n="metric_ops_label">menos operações manuais</span>
+      </div>
+      <div class="metric" data-reveal data-i18n-attr="aria-label:metric_years_full">
+        <span class="metric-value" aria-hidden="true" data-count-to="15" data-count-suffix="+">15+</span>
+        <span class="metric-label" aria-hidden="true" data-i18n="metric_years_label">anos gerindo processos e pessoas</span>
+      </div>
+    </div>
+  </section>
+
+  <div class="tools-marquee" id="tools-marquee" aria-hidden="true">
+    <div class="tools-marquee-track" id="tools-marquee-track"></div>
+  </div>
+
   <main>
     <section class="section" id="projetos">
       <div class="wrap">
-        <div class="section-head">
+        <div class="section-head" data-reveal>
           <h2 data-i18n="projects_title">Projetos</h2>
           <p data-i18n="projects_subtitle">Seleção de trabalhos em automação, análise de dados e integração de sistemas.</p>
         </div>
@@ -92,14 +129,14 @@
           <p class="footer-tagline" data-i18n="footer_tagline">Analista de BI &amp; Automação de Processos, baseado em Maringá-PR.</p>
         </div>
         <div class="footer-links">
-          <div class="footer-col">
+          <div class="footer-col" data-reveal>
             <h4 data-i18n="footer_nav">Navegação</h4>
             <ul>
               <li><a href="index.html#projetos" data-i18n="nav_projects">Projetos</a></li>
               <li><a href="contato.html" data-i18n="nav_contact">Contato</a></li>
             </ul>
           </div>
-          <div class="footer-col">
+          <div class="footer-col" data-reveal>
             <h4 data-i18n="footer_connect">Conecte-se</h4>
             <ul>
               <li><a href="https://github.com/andrescultori" id="github-link-footer" target="_blank" rel="noopener">GitHub</a></li>
@@ -128,5 +165,6 @@
   <script src="js/social.js"></script>
   <script src="js/projects-data.js"></script>
   <script src="js/main.js"></script>
+  <script src="js/motion.js" defer></script>
 </body>
 </html>

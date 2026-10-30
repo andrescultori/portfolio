@@ -1220,3 +1220,282 @@ p {
   .footer-top { flex-direction: column; }
   .admin-form-grid { grid-template-columns: 1fr; }
 }
+
+/* ==========================================================================
+   Motion layer (js/motion.js) — reveal, typewriter, counters, figures,
+   card spotlight, hero parallax, marquee, progress bar, header shrink,
+   skeleton loading. Toggle any effect via MOTION_CONFIG in js/motion.js.
+   `.js` is added by a tiny inline <head> script; without it (no JS) or once
+   `.reveal-fallback` kicks in (1.5s safety net), everything stays visible.
+   ========================================================================== */
+
+.js [data-reveal] {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+.js [data-reveal].is-visible,
+.reveal-fallback [data-reveal] {
+  opacity: 1;
+  transform: none;
+}
+
+/* ---- Headline typewriter ---- */
+
+#hero-role-type { white-space: pre; }
+
+.motion-caret {
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  margin-left: 2px;
+  vertical-align: -0.15em;
+  background: currentColor;
+  opacity: 0;
+}
+
+.motion-caret.is-active {
+  animation: motion-caret-blink 1s step-end infinite;
+}
+
+@keyframes motion-caret-blink {
+  0%, 50% { opacity: 1; }
+  50.01%, 100% { opacity: 0; }
+}
+
+/* ---- Metrics strip ---- */
+
+.metrics-strip {
+  background: var(--paper-raised);
+  border-bottom: 1px solid var(--line);
+  padding: 32px 0;
+}
+
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+  text-align: center;
+}
+
+.metric-value {
+  display: block;
+  font-family: var(--font-display);
+  font-size: clamp(26px, 3vw, 34px);
+  font-weight: 600;
+  color: var(--accent-strong);
+}
+
+.metric-label {
+  display: block;
+  margin-top: 4px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+/* ---- Tools marquee (decorative; content built by js/main.js) ---- */
+
+.tools-marquee {
+  overflow: hidden;
+  border-bottom: 1px solid var(--line);
+  padding: 14px 0;
+  background: var(--paper);
+}
+
+.tools-marquee-track {
+  display: flex;
+  width: max-content;
+}
+
+.marquee-set {
+  display: flex;
+  flex-shrink: 0;
+}
+
+.marquee-item {
+  padding: 0 20px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+html.motion-tools-marquee .tools-marquee-track {
+  animation: motion-marquee-scroll 32s linear infinite;
+}
+
+.tools-marquee:hover .tools-marquee-track,
+.tools-marquee:focus-within .tools-marquee-track {
+  animation-play-state: paused;
+}
+
+@keyframes motion-marquee-scroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+/* ---- Reading progress bar ---- */
+
+.reading-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  z-index: 60;
+  background: transparent;
+}
+
+.reading-progress-bar {
+  height: 100%;
+  width: 100%;
+  background: var(--accent);
+  transform: scaleX(0);
+  transform-origin: left;
+}
+
+/* ---- Header shrink on scroll ---- */
+
+.site-header { view-transition-name: site-header; }
+
+.site-header .wrap { transition: padding 0.2s ease; }
+
+.site-header.is-scrolled {
+  background: rgba(11, 14, 20, 0.94);
+  backdrop-filter: blur(16px);
+  box-shadow: var(--shadow-md);
+}
+
+.site-header.is-scrolled .wrap { padding-top: 4px; padding-bottom: 4px; }
+
+/* ---- Card spotlight + chip transitions ---- */
+
+.card {
+  position: relative;
+  --mx: 50%;
+  --my: 50%;
+}
+
+.card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  background: radial-gradient(circle at var(--mx) var(--my), rgba(91, 76, 240, 0.12), transparent 60%);
+  transition: opacity 0.2s ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .card:hover::after { opacity: 1; }
+}
+
+.tag { transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease; }
+
+.card:hover .tag { border-color: var(--accent); color: var(--accent-strong); }
+
+/* ---- Hero background drift + mouse parallax ---- */
+
+.hero {
+  --hero-px: 0px;
+  --hero-py: 0px;
+}
+
+.hero::after {
+  transform: translate3d(var(--hero-px), var(--hero-py), 0);
+  animation: motion-hero-drift 22s linear infinite paused;
+}
+
+.hero.in-view::after { animation-play-state: running; }
+
+@keyframes motion-hero-drift {
+  to { background-position: 26px 52px; }
+}
+
+/* ---- Project detail figures ---- */
+
+#project-figure:empty { display: none; }
+
+.figure-svg {
+  display: block;
+  margin: 28px 0;
+  max-width: 100%;
+  height: auto;
+  color: var(--text-muted);
+}
+
+.figure-node { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 1.5; }
+.figure-node--center { fill: var(--accent); stroke: none; }
+.figure-node-label { font-size: 10px; fill: var(--text-muted); }
+.figure-node-label--center { font-size: 10px; fill: #fff; font-weight: 700; }
+
+.figure-pulse-path { opacity: 0.35; }
+
+.figure-star.in-view .figure-pulse-path {
+  animation: motion-figure-pulse 2.4s linear infinite;
+}
+
+@keyframes motion-figure-pulse {
+  to { stroke-dashoffset: -160; }
+}
+
+.figure-bar {
+  fill: var(--accent-soft);
+  transform: scaleY(0);
+  transform-origin: bottom;
+  transition: transform 0.5s ease;
+}
+
+.figure-bars.in-view .figure-bar { transform: scaleY(1); }
+
+.figure-wrap { margin: 0; }
+
+.figure-caption {
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* ---- Skeleton loading ---- */
+
+.skeleton-block { width: 100%; height: 100%; min-height: 160px; border-radius: inherit; }
+
+.skeleton-line { display: block; height: 10px; border-radius: 6px; margin: 10px 0; }
+
+.skeleton-shimmer {
+  background: linear-gradient(90deg, var(--line) 25%, var(--line-strong) 37%, var(--line) 63%);
+  background-size: 400% 100%;
+  animation: motion-shimmer 1.4s ease infinite;
+}
+
+@keyframes motion-shimmer {
+  0% { background-position: 100% 50%; }
+  100% { background-position: 0 50%; }
+}
+
+@media (max-width: 860px) {
+  .metrics-grid { grid-template-columns: repeat(2, 1fr); gap: 20px 16px; }
+}
+
+/* ---- Reduced motion: no typewriter, rotation, counting, marquee scroll,
+   parallax, pulse, or scroll-triggered reveal — content shows directly. */
+@media (prefers-reduced-motion: reduce) {
+  .js [data-reveal] {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+  .motion-caret { display: none !important; }
+  html.motion-tools-marquee .tools-marquee-track {
+    animation: none !important;
+    flex-wrap: wrap;
+    width: 100%;
+  }
+  .hero::after { animation: none !important; transform: none !important; }
+  .figure-pulse-path, .figure-bar { animation: none !important; }
+  .figure-bar { transform: scaleY(1) !important; transition: none !important; }
+  .skeleton-shimmer { animation: none !important; }
+  .site-header .wrap { transition: none !important; }
+  .card::after, .tag { transition: none !important; }
+}

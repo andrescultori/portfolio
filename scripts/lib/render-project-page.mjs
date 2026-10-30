@@ -1,4 +1,5 @@
 import { escapeHtml, safeJsonLd } from "./html.mjs";
+import { renderProjectFigure } from "./project-figures.mjs";
 
 /* Standalone static page for dist/projeto/<slug>/index.html. Mirrors the
    header/nav/footer chrome and the #project-title/#project-tags/etc. DOM
@@ -116,6 +117,21 @@ export function renderProjectPage({ project, siteUrl, pageUrl, social }) {
     })();
   </script>`;
 
+  // Adds the "js" class (scopes the [data-reveal] hidden-by-default CSS) and
+  // a 1.5s safety net that removes any hiding if js/motion.js never runs
+  // (load failure, disabled JS detection gap, etc.) — mirrored by hand in
+  // index.html/projeto.html/contato.html's <head>.
+  const motionSafetyScript = `<script>
+    (function () {
+      document.documentElement.classList.add("js");
+      setTimeout(function () {
+        document.documentElement.classList.add("reveal-fallback");
+      }, 1500);
+    })();
+  </script>`;
+
+  const figureHtml = renderProjectFigure(project.slug);
+
   const html = `<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -137,8 +153,11 @@ export function renderProjectPage({ project, siteUrl, pageUrl, social }) {
   <link rel="stylesheet" href="../../css/styles.css">
   <script type="application/ld+json">${safeJsonLd(jsonLd)}</script>
   ${slugShim}
+  ${motionSafetyScript}
 </head>
 <body>
+
+  <div class="reading-progress" aria-hidden="true"><div class="reading-progress-bar" id="reading-progress-bar"></div></div>
 
   <header class="site-header">
     <div class="wrap">
@@ -162,7 +181,7 @@ export function renderProjectPage({ project, siteUrl, pageUrl, social }) {
     <section class="project-hero">
       <div class="wrap">
         <a class="back-link" href="../../index.html#projetos">&larr; <span>Voltar aos projetos</span></a>
-        <div class="project-hero-top">
+        <div class="project-hero-top" data-reveal>
           <div>
             <h1 id="project-title">${escapeHtml(project.title)}</h1>
             <div class="tag-row" id="project-tags">${renderStackTags(project.stack)}</div>
@@ -175,14 +194,16 @@ export function renderProjectPage({ project, siteUrl, pageUrl, social }) {
 
     <section class="project-body">
       <div class="wrap project-layout">
-        <div>
+        <div data-reveal>
           <p class="prose" id="project-description">${escapeHtml(descPt)}</p>
           ${noteHtml}
+
+          <div id="project-figure">${figureHtml}</div>
 
           ${shotsHtml}
         </div>
 
-        <aside class="side-card">
+        <aside class="side-card" data-reveal>
           <h4>Stack utilizada</h4>
           <div class="tag-row" id="side-stack">${renderStackTags(project.stack)}</div>
           <div class="side-links" id="side-links">${renderActions(project, "side")}</div>
@@ -217,6 +238,7 @@ ${enBlock}
   <script src="../../js/social.js"></script>
   <script src="../../js/projects-data.js"></script>
   <script src="../../js/project.js"></script>
+  <script src="../../js/motion.js" defer></script>
 </body>
 </html>
 `;
