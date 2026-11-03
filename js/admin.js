@@ -440,7 +440,7 @@ const METRIC_LABEL_MAX = 40;
 const METRIC_AFFIX_PATTERN = /^[~+%xkMh]{0,3}$/;
 const METRICS_MAX = 6;
 
-const DEFAULT_METRICS = [
+var DEFAULT_METRICS = [
   { value: 10, prefix: "", suffix: "+", label: { pt: "cenários (Make.com)", en: "scenarios (Make.com)" }, visible: true },
   { value: 10, prefix: "", suffix: "+", label: { pt: "ferramentas integradas", en: "integrated tools" }, visible: true },
   { value: 80, prefix: "~", suffix: "%", label: { pt: "menos operações manuais", en: "fewer manual operations" }, visible: true },
@@ -457,9 +457,20 @@ function cloneMetrics(metrics) {
   return metrics.map((m) => ({ ...m, label: { ...m.label } }));
 }
 
+function metricsEqual(a, b) {
+  return JSON.stringify(a) === JSON.stringify(b);
+}
+
+/* Saving the untouched defaults should still mean "no override" — same
+   semantics as [] / missing, so a future code-side default change isn't
+   shadowed by a stale literal copy sitting in the database. */
+function metricsToSave(validatedMetrics) {
+  return metricsEqual(validatedMetrics, DEFAULT_METRICS) ? [] : validatedMetrics;
+}
+
 let SITE_SETTINGS = { photoPath: "", links: {}, i18nOverrides: { pt: {}, en: {} }, metrics: [] };
 let PENDING_PHOTO_PATH = null; // null = no pending change; "" = pending removal
-let METRICS_DRAFT = []; // working copy edited in the UI, saved only on submit
+var METRICS_DRAFT = []; // working copy edited in the UI, saved only on submit — var so tests/admin-metrics.test.mjs's node:vm sandbox can set/read it (let bindings aren't exposed on the sandbox's global object)
 
 function isHttpsUrlAdmin(value) {
   return typeof value === "string" && /^https:\/\//i.test(value.trim());
@@ -511,7 +522,12 @@ function populateSiteForm() {
     document.getElementById(`s-link-${key}`).value = links[key] || "";
   });
 
-  METRICS_DRAFT = SITE_SETTINGS.metrics && SITE_SETTINGS.metrics.length ? cloneMetrics(SITE_SETTINGS.metrics) : [];
+  // Empty/absent metrics means "no override" — but the editor must reflect
+  // what the site actually shows right now (the 4 defaults), not an empty
+  // list that would silently delete them on save. populateSiteForm() runs
+  // before clearFormDirty() below, so this never marks the form dirty.
+  METRICS_DRAFT =
+    SITE_SETTINGS.metrics && SITE_SETTINGS.metrics.length ? cloneMetrics(SITE_SETTINGS.metrics) : cloneMetrics(DEFAULT_METRICS);
   renderMetricsRows();
 
   setStatus(document.getElementById("site-form-status"), "", "");
@@ -570,6 +586,7 @@ function buildMetricRow(item, index) {
   const labelPtInput = document.createElement("input");
   labelPtInput.type = "text";
   labelPtInput.maxLength = METRIC_LABEL_MAX;
+  labelPtInput.placeholder = "ex.: projetos entregues";
   labelPtInput.value = (item.label && item.label.pt) || "";
   labelPtInput.addEventListener("input", () => {
     METRICS_DRAFT[index].label.pt = labelPtInput.value;
@@ -579,6 +596,7 @@ function buildMetricRow(item, index) {
   const labelEnInput = document.createElement("input");
   labelEnInput.type = "text";
   labelEnInput.maxLength = METRIC_LABEL_MAX;
+  labelEnInput.placeholder = "e.g.: delivered projects";
   labelEnInput.value = (item.label && item.label.en) || "";
   labelEnInput.addEventListener("input", () => {
     METRICS_DRAFT[index].label.en = labelEnInput.value;
@@ -654,7 +672,7 @@ function buildMetricRow(item, index) {
   return row;
 }
 
-function renderMetricsRows() {
+function renderMetricsRows(focusIndex) {
   const list = document.getElementById("s-metrics-list");
   list.innerHTML = "";
   if (METRICS_DRAFT.length === 0) {
@@ -667,12 +685,16 @@ function renderMetricsRows() {
   }
   document.getElementById("s-metrics-add").disabled = METRICS_DRAFT.length >= METRICS_MAX;
   setStatus(document.getElementById("s-metrics-status"), "", "");
+  if (focusIndex != null) {
+    const valueInput = document.getElementById(`s-metric-${focusIndex}-value`);
+    if (valueInput) valueInput.focus();
+  }
 }
 
 function handleMetricAdd() {
   if (METRICS_DRAFT.length >= METRICS_MAX) return;
   METRICS_DRAFT.push({ value: 0, prefix: "", suffix: "", label: { pt: "", en: "" }, visible: true });
-  renderMetricsRows();
+  renderMetricsRows(METRICS_DRAFT.length - 1);
   markFormDirty();
 }
 
@@ -713,6 +735,11 @@ function validateMetricsDraft() {
     }
     const labelPt = ((item.label && item.label.pt) || "").trim();
     const labelEn = ((item.label && item.label.en) || "").trim();
+    const visible = item.visible !== false;
+    if (visible && !labelPt) {
+      setStatus(statusEl, `Indicador ${n}: preencha o rótulo em português.`, "err");
+      return null;
+    }
     if (labelPt.length > METRIC_LABEL_MAX) {
       setStatus(statusEl, `Indicador ${n}: rótulo (PT) passou do limite de ${METRIC_LABEL_MAX} caracteres.`, "err");
       return null;
@@ -721,7 +748,7 @@ function validateMetricsDraft() {
       setStatus(statusEl, `Indicador ${n}: rótulo (EN) passou do limite de ${METRIC_LABEL_MAX} caracteres.`, "err");
       return null;
     }
-    cleaned.push({ value, prefix, suffix, label: { pt: labelPt, en: labelEn }, visible: item.visible !== false });
+    cleaned.push({ value, prefix, suffix, label: { pt: labelPt, en: labelEn }, visible });
   }
   setStatus(statusEl, "", "");
   return cleaned;
@@ -833,8 +860,9 @@ async function handleSiteFormSubmit(e) {
     }
   }
 
-  const metrics = validateMetricsDraft();
-  if (metrics === null) return; // validateMetricsDraft() already set the error status
+  const validatedMetrics = validateMetricsDraft();
+  if (validatedMetrics === null) return; // validateMetricsDraft() already set the error status
+  const metrics = metricsToSave(validatedMetrics);
 
   const photoPath = PENDING_PHOTO_PATH === null ? SITE_SETTINGS.photoPath : PENDING_PHOTO_PATH;
 

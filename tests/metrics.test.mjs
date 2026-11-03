@@ -90,6 +90,22 @@ test("filterMetrics returns null when every item is invalid", () => {
   assert.equal(filterMetrics([validMetric({ value: -5 }), validMetric({ prefix: "$$$$" })]), null);
 });
 
+test("filterMetrics drops a visible item with no PT label (would render as a bare number)", () => {
+  const result = filterMetrics([
+    validMetric({ value: 1, label: { pt: "", en: "has en only" } }),
+    validMetric({ value: 2, label: { pt: "   ", en: "" } }), // whitespace-only PT
+    validMetric({ value: 3 }), // the one valid item
+  ]);
+  assert.equal(result.length, 1);
+  assert.equal(result[0].value, 3);
+});
+
+test("filterMetrics keeps a hidden item even without a PT label — it never renders anyway", () => {
+  const result = filterMetrics([validMetric({ value: 1, visible: false, label: { pt: "", en: "" } })]);
+  assert.equal(result.length, 1);
+  assert.equal(result[0].value, 1);
+});
+
 // --- renderMetricsHtml ------------------------------------------------------
 
 test("renderMetricsHtml renders final values and escapes label HTML", () => {

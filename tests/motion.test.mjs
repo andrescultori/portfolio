@@ -241,6 +241,21 @@ test("metricsSignaturesEqual compares by value, not by reference", () => {
   assert.equal(sandbox.metricsSignaturesEqual(a, [{ value: 2, prefix: "", suffix: "+", labelPt: "x" }]), false);
 });
 
+test("motion.js's filterMetrics drops a visible item with no PT label, but keeps a hidden one without it", () => {
+  const result = sandbox.filterMetrics([
+    validMetric({ value: 1, label: { pt: "", en: "en only" } }),
+    validMetric({ value: 2, visible: false, label: { pt: "", en: "" } }),
+    validMetric({ value: 3 }),
+  ]);
+  assert.equal(JSON.stringify(Array.from(result, (m) => m.value)), JSON.stringify([2, 3]));
+});
+
+test("resolveMetricLabelText falls back EN -> PT when EN is blank, PT otherwise", () => {
+  assert.equal(sandbox.resolveMetricLabelText("Rótulo", "", "en"), "Rótulo");
+  assert.equal(sandbox.resolveMetricLabelText("Rótulo", "Label", "en"), "Label");
+  assert.equal(sandbox.resolveMetricLabelText("Rótulo", "Label", "pt"), "Rótulo");
+});
+
 test("the real MOTION_CONFIG only has boolean flags, one per effect", () => {
   const config = sandbox.MOTION_CONFIG;
   assert.ok(config && Object.keys(config).length >= 10);
