@@ -183,3 +183,12 @@
 /* Owner chip (Me / Client) */
 .pm-owner-chip { padding: 3px 9px; font-size: 11.5px; }
 .pm-owner-chip.is-client { background: var(--accent-soft); border-color: var(--accent-soft); color: var(--accent-strong); }
+
+/* task priority + inline editing */
+.pm-prio-high { background: #fdf0d5; color: #8a5a00; }
+.pm-prio-urgent { background: #fbe0de; color: #a02720; }
+.pm-task.is-editing { background: var(--paper); align-items: stretch; }
+.pm-task-edit { flex-wrap: wrap; width: 100%; }
+.pm-task-edit input[type="text"] { flex: 1 1 220px; }
+.pm-inline-form { flex-wrap: wrap; }
+.pm-inline-form input[type="text"] { min-width: 0; }

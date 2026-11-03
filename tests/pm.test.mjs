@@ -79,9 +79,9 @@ test("buildShareLink works on localhost", () => {
 
 // --- clientViewSummary ---------------------------------------------------
 
-test("clientViewSummary reports N tasks, M milestones, K updates visible", () => {
-  assert.equal(sandbox.clientViewSummary(0, 0, 0), "0 tasks, 0 milestones, 0 updates visible");
-  assert.equal(sandbox.clientViewSummary(3, 1, 2), "3 tasks, 1 milestones, 2 updates visible");
+test("clientViewSummary reports N tasks, M phases, K updates visible", () => {
+  assert.equal(sandbox.clientViewSummary(0, 0, 0), "0 tasks, 0 phases, 0 updates visible");
+  assert.equal(sandbox.clientViewSummary(3, 1, 2), "3 tasks, 1 phases, 2 updates visible");
 });
 
 // Note: NOTE_KINDS/CLIENT_LANGS are declared with `const` at module scope,
@@ -99,4 +99,26 @@ test("pm.js keeps the scroll position on re-render and only resets it when the v
   assert.ok(src.includes("function keepScroll("), "keepScroll helper");
   assert.ok(!/route\(\)\s*\{[\s\S]*?window\.scrollTo\(0, 0\);\s*\}/.test(src), "route() must not always scroll to top");
   assert.ok(src.includes("changedView"), "scroll reset is tied to a real view change");
+});
+
+test("parseGithubRepo accepts normal, .git and deep links and rejects other hosts", () => {
+  assert.deepEqual({ ...sandbox.parseGithubRepo("https://github.com/andrescultori/portfolio") }, { owner: "andrescultori", repo: "portfolio" });
+  assert.deepEqual({ ...sandbox.parseGithubRepo("https://github.com/a/b.git") }, { owner: "a", repo: "b" });
+  assert.deepEqual({ ...sandbox.parseGithubRepo("https://github.com/a/b/tree/main/src") }, { owner: "a", repo: "b" });
+  assert.equal(sandbox.parseGithubRepo("https://gitlab.com/a/b"), null);
+  assert.equal(sandbox.parseGithubRepo(""), null);
+});
+
+test("stackFromRepoData combines languages, npm/python deps and root files", () => {
+  const out = sandbox.stackFromRepoData({
+    languages: { JavaScript: 6000, HTML: 3000, CSS: 900, Shell: 50, PLpgSQL: 40 },
+    rootNames: ["wrangler.toml", "supabase", "README.md"],
+    packageJson: { dependencies: { "@supabase/supabase-js": "^2" }, devDependencies: { vite: "^5", tailwindcss: "^3" } },
+    requirements: "pandas==2.0\nplotly\n# comment\n",
+  });
+  assert.deepEqual(Array.from(out), ["JavaScript", "HTML", "CSS", "Supabase", "Vite", "Tailwind CSS", "pandas", "Plotly", "Cloudflare"]);
+});
+
+test("mergeStack keeps existing entries in order and only appends new ones (case-insensitive)", () => {
+  assert.deepEqual(Array.from(sandbox.mergeStack(["Make.com", " HTML "], ["html", "Supabase", "Make.com"])), ["Make.com", "HTML", "Supabase"]);
 });

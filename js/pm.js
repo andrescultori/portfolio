@@ -8,6 +8,8 @@
 const PM_STATUSES = ["idea", "planned", "active", "paused", "done", "archived"];
 const MILESTONE_STATUSES = ["planned", "active", "done", "dropped"];
 const NOTE_KINDS = ["info", "decision", "log", "update"];
+const TASK_PRIORITIES = ["normal", "high", "urgent"];
+const TASK_PRIORITY_LABELS = { normal: "Normal", high: "High", urgent: "Urgent" };
 const NOTE_KIND_LABELS = { update: "Client update" };
 const LINK_KEYS = ["repo", "live", "admin", "claude_project", "supabase", "docs", "drive"];
 const CLIENT_LANGS = ["pt", "en"];
@@ -108,9 +110,92 @@ function buildShareLink(origin, pathname, token) {
   return `${origin}${basePath}follow/?t=${token}`;
 }
 
+/* ---------- stack detection from a public GitHub repo ---------- */
+
+function parseGithubRepo(url) {
+  const m = String(url || "").trim().match(/^https?:\/\/(?:www\.)?github\.com\/([\w.-]+)\/([\w.-]+?)(?:\.git)?(?:[/?#].*)?$/i);
+  return m ? { owner: m[1], repo: m[2] } : null;
+}
+
+const LANGUAGE_LABELS = { PLpgSQL: "PostgreSQL", "Jupyter Notebook": "Jupyter", Shell: null, Batchfile: null, Makefile: null };
+const NPM_STACK = {
+  react: "React", next: "Next.js", vue: "Vue", nuxt: "Nuxt", svelte: "Svelte", "@sveltejs/kit": "SvelteKit",
+  astro: "Astro", vite: "Vite", tailwindcss: "Tailwind CSS", typescript: "TypeScript", express: "Express",
+  "@supabase/supabase-js": "Supabase", firebase: "Firebase", "react-router-dom": "React Router",
+  recharts: "Recharts", "chart.js": "Chart.js", d3: "D3", plotly: "Plotly", "plotly.js": "Plotly",
+  "@tanstack/react-query": "TanStack Query", zustand: "Zustand", sortablejs: "SortableJS",
+};
+const PY_STACK = {
+  pandas: "pandas", numpy: "NumPy", dash: "Plotly Dash", plotly: "Plotly", streamlit: "Streamlit",
+  flask: "Flask", fastapi: "FastAPI", django: "Django", requests: "requests", sqlalchemy: "SQLAlchemy",
+  openpyxl: "openpyxl", supabase: "Supabase", gspread: "gspread", scikit_learn: "scikit-learn", "scikit-learn": "scikit-learn",
+};
+const ROOT_FILE_STACK = {
+  "wrangler.toml": "Cloudflare", "wrangler.json": "Cloudflare", "vercel.json": "Vercel", "netlify.toml": "Netlify",
+  supabase: "Supabase", dockerfile: "Docker", "docker-compose.yml": "Docker", ".github": null,
+};
+
+/* languages: { Name: bytes }, rootNames: file/dir names at the repo root,
+   packageJson: parsed object | null, requirements: text | null. */
+function stackFromRepoData({ languages = {}, rootNames = [], packageJson = null, requirements = null }) {
+  const out = [];
+  const add = (label) => { if (label && !out.includes(label)) out.push(label); };
+  const total = Object.values(languages).reduce((a, b) => a + b, 0) || 1;
+  Object.entries(languages)
+    .sort((a, b) => b[1] - a[1])
+    .filter(([, bytes]) => bytes / total >= 0.05)
+    .forEach(([name]) => add(Object.prototype.hasOwnProperty.call(LANGUAGE_LABELS, name) ? LANGUAGE_LABELS[name] : name));
+  if (packageJson) {
+    const deps = { ...(packageJson.dependencies || {}), ...(packageJson.devDependencies || {}) };
+    Object.keys(deps).forEach((d) => add(NPM_STACK[d]));
+  }
+  if (requirements) {
+    requirements.split(/\r?\n/).forEach((line) => {
+      const name = line.trim().toLowerCase().split(/[=<>~!\[; ]/)[0];
+      if (name) add(PY_STACK[name]);
+    });
+  }
+  rootNames.forEach((n) => add(ROOT_FILE_STACK[n.toLowerCase()]));
+  return out;
+}
+
+/* Keeps what is already there (in order) and appends anything new. */
+function mergeStack(existing, detected) {
+  const out = existing.map((x) => x.trim()).filter(Boolean);
+  const seen = new Set(out.map((x) => x.toLowerCase()));
+  detected.forEach((d) => { if (!seen.has(d.toLowerCase())) { out.push(d); seen.add(d.toLowerCase()); } });
+  return out;
+}
+
+async function fetchRepoStack(repoUrl) {
+  const ref = parseGithubRepo(repoUrl);
+  if (!ref) throw new Error("Add a GitHub repo link first (Edit links → repo).");
+  const base = `https://api.github.com/repos/${ref.owner}/${ref.repo}`;
+  const get = async (path) => {
+    const res = await fetch(`${base}${path}`, { headers: { Accept: "application/vnd.github+json" } });
+    if (res.status === 404) return null;
+    if (res.status === 403) throw new Error("GitHub rate limit reached — try again in a few minutes.");
+    if (!res.ok) throw new Error(`GitHub returned ${res.status}.`);
+    return res.json();
+  };
+  const languages = await get("/languages");
+  if (languages === null) throw new Error("Repo not found or private. Only public repos can be read.");
+  const root = (await get("/contents/")) || [];
+  const names = root.map((f) => f.name);
+  const readText = async (name) => {
+    if (!names.includes(name)) return null;
+    const file = await get(`/contents/${name}`);
+    return file && file.content ? new TextDecoder().decode(Uint8Array.from(atob(file.content.replace(/\n/g, "")), (c) => c.charCodeAt(0))) : null;
+  };
+  let packageJson = null;
+  try { packageJson = JSON.parse((await readText("package.json")) || "null"); } catch (e) { packageJson = null; }
+  const requirements = await readText("requirements.txt");
+  return stackFromRepoData({ languages, rootNames: names, packageJson, requirements });
+}
+
 /* The Client view panel's "nothing exposed by accident" summary line. */
 function clientViewSummary(tasksVisible, milestonesVisible, updatesVisible) {
-  return `${tasksVisible} tasks, ${milestonesVisible} milestones, ${updatesVisible} updates visible`;
+  return `${tasksVisible} tasks, ${milestonesVisible} phases, ${updatesVisible} updates visible`;
 }
 
 /* navigator.clipboard with a document.execCommand fallback for browsers/
@@ -523,6 +608,36 @@ function renderClientViewPanel(p) {
   return el("section", { class: "pm-panel" }, children);
 }
 
+/* Stack input + "Detect from repo": reads the public GitHub repo linked under
+   Edit links → repo and merges what it finds into the field (nothing is saved
+   until the form's Save button is pressed). */
+function stackField(p) {
+  const input = el("input", { type: "text", name: "stack", value: (p.stack || []).join(", ") });
+  const button = el("button", {
+    type: "button",
+    class: "btn btn-ghost-light btn-sm",
+    text: "Detect from repo",
+    onclick: async (event) => {
+      const form = event.target.closest("form");
+      const repoInput = form && form.querySelector('input[name="link_repo"]');
+      const repoUrl = (repoInput && repoInput.value) || (p.links || {}).repo;
+      button.disabled = true;
+      try {
+        const detected = await fetchRepoStack(repoUrl);
+        const merged = mergeStack(input.value.split(","), detected);
+        const added = merged.length - input.value.split(",").map((x) => x.trim()).filter(Boolean).length;
+        input.value = merged.join(", ");
+        toast(added > 0 ? `Detected ${added} new item(s) — review and press Save` : "Stack is already up to date");
+      } catch (error) {
+        toast(error.message, "err");
+      } finally {
+        button.disabled = false;
+      }
+    },
+  });
+  return el("label", { class: "pm-field" }, el("span", { text: "Stack (comma-separated)" }), el("div", { class: "pm-inline-form" }, input, button));
+}
+
 function renderInfoPanel(p) {
   const links = p.links || {};
   const form = el(
@@ -542,7 +657,7 @@ function renderInfoPanel(p) {
       field("Due", el("input", { type: "date", name: "due_date", value: p.due_date || "" }))
     ),
     field("Summary", el("textarea", { name: "summary", rows: 3, value: p.summary || "" })),
-    field("Stack (comma-separated)", el("input", { type: "text", name: "stack", value: (p.stack || []).join(", ") })),
+    stackField(p),
     el(
       "details",
       { class: "pm-links-edit" },
@@ -641,7 +756,60 @@ function ownerToggleButton(task) {
   });
 }
 
+let editingTaskId = null;
+
+function priorityBadge(task) {
+  return task.priority && task.priority !== "normal"
+    ? el("span", { class: `pm-badge pm-prio-${task.priority}`, text: TASK_PRIORITY_LABELS[task.priority] })
+    : null;
+}
+
+function taskEditForm(task) {
+  const title = el("input", { type: "text", value: task.title, required: true, "aria-label": "Task title" });
+  const due = el("input", { type: "date", value: task.due_date || "", "aria-label": "Due date" });
+  const priority = el("select", { "aria-label": "Task priority" }, options(TASK_PRIORITIES, task.priority || "normal", TASK_PRIORITY_LABELS));
+  const phase = el("select", { "aria-label": "Phase" },
+    el("option", { value: "", text: "— No phase —", selected: !task.milestone_id }),
+    ...projectMilestones(task.project_id).map((m) =>
+      el("option", { value: m.id, text: m.title, selected: m.id === task.milestone_id, "data-no-i18n": "" }))
+  );
+  const owner = el("select", { "aria-label": "Owner" }, options(["me", "client"], task.owner || "me", { me: "Me", client: "Client" }));
+  const visible = el("input", { type: "checkbox", checked: Boolean(task.visible_to_client) });
+  const form = el(
+    "form",
+    {
+      class: "pm-inline-form pm-task-edit",
+      onsubmit: async (event) => {
+        event.preventDefault();
+        const newTitle = title.value.trim();
+        if (!newTitle) return;
+        const updated = await run(
+          sb.from("pm_tasks").update({
+            title: newTitle,
+            due_date: due.value || null,
+            priority: priority.value,
+            milestone_id: phase.value || null,
+            owner: owner.value,
+            visible_to_client: visible.checked,
+          }).eq("id", task.id).select().single(),
+          "Saved"
+        );
+        if (!updated) return;
+        Object.assign(task, updated);
+        editingTaskId = null;
+        route();
+      },
+    },
+    title, due, priority, phase, owner,
+    el("label", { class: "pm-field pm-inline-field" }, visible, el("span", { text: "Show to client" })),
+    el("button", { type: "submit", class: "btn btn-primary btn-sm", text: "Save" }),
+    el("button", { type: "button", class: "btn btn-ghost-light btn-sm", text: "Cancel", onclick: () => { editingTaskId = null; route(); } })
+  );
+  return el("li", { class: "pm-task is-editing" }, form);
+}
+
 function taskRow(task) {
+  if (editingTaskId === task.id) return taskEditForm(task);
   const checkbox = el("input", {
     type: "checkbox",
     checked: task.done,
@@ -663,6 +831,7 @@ function taskRow(task) {
     { class: `pm-task${task.done ? " is-done" : ""}` },
     checkbox,
     el("span", { class: "pm-task-title", text: task.title }),
+    priorityBadge(task),
     task.due_date
       ? el("span", { class: `pm-task-due${!task.done && isOverdue(task.due_date) ? " is-overdue" : ""}`, text: formatDate(task.due_date) })
       : null,
@@ -674,6 +843,13 @@ function taskRow(task) {
       );
       if (updated) Object.assign(task, updated);
       route();
+    }),
+    el("button", {
+      type: "button",
+      class: "pm-icon-btn",
+      title: "Edit task",
+      text: "✎",
+      onclick: () => { editingTaskId = task.id; route(); },
     }),
     el("button", {
       type: "button",
@@ -692,6 +868,11 @@ function taskRow(task) {
 function addTaskForm(projectId, milestoneId) {
   const input = el("input", { type: "text", placeholder: "Add a task…", required: true });
   const due = el("input", { type: "date", "aria-label": "Due date" });
+  const owner = el("select", { "aria-label": "Owner" }, options(["me", "client"], "me", { me: "Me", client: "Client" }));
+  const priority = el("select", { "aria-label": "Task priority" }, options(TASK_PRIORITIES, "normal", TASK_PRIORITY_LABELS));
+  const visible = el("input", { type: "checkbox" });
+  // A task for the client is almost always meant to be seen by them.
+  owner.addEventListener("change", () => { visible.checked = owner.value === "client"; });
   return el(
     "form",
     {
@@ -707,6 +888,9 @@ function addTaskForm(projectId, milestoneId) {
             milestone_id: milestoneId,
             title,
             due_date: due.value || null,
+            owner: owner.value,
+            visible_to_client: visible.checked,
+            priority: priority.value,
             sort_order: siblings.length,
           }).select().single()
         );
@@ -717,6 +901,9 @@ function addTaskForm(projectId, milestoneId) {
     },
     input,
     due,
+    owner,
+    priority,
+    el("label", { class: "pm-field pm-inline-field" }, visible, el("span", { text: "Show to client" })),
     el("button", { type: "submit", class: "btn btn-ghost-light btn-sm", text: "Add" })
   );
 }
@@ -729,7 +916,7 @@ function renderRoadmapPanel(p) {
     const mTasks = tasks.filter((t) => t.milestone_id === m.id);
     const statusSelect = el("select", {
       class: `pm-badge-select s-${m.status}`,
-      "aria-label": "Milestone status",
+      "aria-label": "Phase status",
       onchange: async (event) => {
         const updated = await run(
           sb.from("pm_milestones").update({ status: event.target.value }).eq("id", m.id).select().single()
@@ -747,9 +934,25 @@ function renderRoadmapPanel(p) {
         { class: "pm-milestone-head" },
         el("h3", { text: m.title, "data-no-i18n": "" }),
         statusSelect,
+        mTasks.length ? el("span", { class: "pm-task-due", text: `${mTasks.filter((t) => t.done).length}/${mTasks.length} tasks` }) : null,
+        m.status !== "done"
+          ? el("button", {
+              type: "button",
+              class: "btn btn-ghost-light btn-sm",
+              text: "Mark phase complete",
+              onclick: async () => {
+                const updated = await run(
+                  sb.from("pm_milestones").update({ status: "done" }).eq("id", m.id).select().single(),
+                  "Phase marked complete"
+                );
+                if (updated) Object.assign(m, updated);
+                route();
+              },
+            })
+          : null,
         m.target_date ? el("span", { class: "pm-task-due", text: formatDate(m.target_date) }) : null,
         clientChip(m.visible_to_client),
-        visibleToggleButton(m.visible_to_client, `milestone "${m.title}"`, async () => {
+        visibleToggleButton(m.visible_to_client, `phase "${m.title}"`, async () => {
           const updated = await run(
             sb.from("pm_milestones").update({ visible_to_client: !m.visible_to_client }).eq("id", m.id).select().single()
           );
@@ -759,10 +962,10 @@ function renderRoadmapPanel(p) {
         el("button", {
           type: "button",
           class: "pm-icon-btn",
-          title: "Delete milestone (tasks are kept, ungrouped)",
+          title: "Delete phase (tasks are kept, ungrouped)",
           text: "×",
           onclick: async () => {
-            if (!window.confirm(`Delete milestone "${m.title}"? Its tasks are kept.`)) return;
+            if (!window.confirm(`Delete phase "${m.title}"? Its tasks are kept.`)) return;
             if (!(await run(sb.from("pm_milestones").delete().eq("id", m.id)))) return;
             state.milestones = state.milestones.filter((x) => x.id !== m.id);
             state.tasks.forEach((t) => { if (t.milestone_id === m.id) t.milestone_id = null; });
@@ -785,7 +988,7 @@ function renderRoadmapPanel(p) {
     addTaskForm(p.id, null)
   );
 
-  const title = el("input", { type: "text", placeholder: "New milestone…", required: true });
+  const title = el("input", { type: "text", placeholder: "New phase (e.g. Phase 1)…", required: true });
   const target = el("input", { type: "date", "aria-label": "Target date" });
   const addMilestone = el(
     "form",
@@ -809,10 +1012,10 @@ function renderRoadmapPanel(p) {
     },
     title,
     target,
-    el("button", { type: "submit", class: "btn btn-ghost-light btn-sm", text: "Add milestone" })
+    el("button", { type: "submit", class: "btn btn-ghost-light btn-sm", text: "Add phase" })
   );
 
-  return el("section", { class: "pm-panel" }, el("h2", { text: "Roadmap & checklist" }), milestoneBlocks, looseBlock, addMilestone);
+  return el("section", { class: "pm-panel" }, el("h2", { text: "Phases & checklist" }), milestoneBlocks, looseBlock, addMilestone);
 }
 
 function renderNotesPanel(p) {
@@ -903,7 +1106,7 @@ function renderDangerPanel(p) {
       class: "btn btn-ghost-light btn-sm",
       text: "Delete project",
       onclick: async () => {
-        if (!window.confirm(`Delete "${p.name}" with all its milestones, tasks and notes? This cannot be undone.`)) return;
+        if (!window.confirm(`Delete "${p.name}" with all its phases, tasks and notes? This cannot be undone.`)) return;
         if (!(await run(sb.from("pm_projects").delete().eq("id", p.id), "Project deleted"))) return;
         state.projects = state.projects.filter((x) => x.id !== p.id);
         state.milestones = state.milestones.filter((x) => x.project_id !== p.id);
