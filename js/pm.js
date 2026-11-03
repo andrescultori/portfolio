@@ -232,7 +232,7 @@ function renderStats() {
   const stat = (value, label, warn) =>
     el("div", { class: `pm-stat${warn ? " is-warn" : ""}` }, el("strong", { text: value }), el("span", { text: label }));
   document.getElementById("pm-stats").replaceChildren(
-    stat(open.filter((p) => p.status === "active").length, "active"),
+    stat(open.filter((p) => p.status === "active").length, "active projects"),
     stat(open.filter((p) => p.ownership === "client").length, "open client projects"),
     stat(openTasks.length, "open tasks"),
     stat(overdue, "overdue", overdue > 0)
@@ -309,7 +309,7 @@ function renderList() {
 function clientSelectOptions(selectedId) {
   return [
     el("option", { value: "", text: "— Personal (no client) —", selected: !selectedId }),
-    ...state.clients.map((c) => el("option", { value: c.id, text: c.name, selected: c.id === selectedId })),
+    ...state.clients.map((c) => el("option", { value: c.id, text: c.name, selected: c.id === selectedId, "data-no-i18n": "" })),
     el("option", { value: "__new", text: "+ New client…" }),
   ];
 }
@@ -377,7 +377,7 @@ function renderDetail(p) {
     "div",
     { class: "pm-detail-head" },
     el("a", { href: "#", class: "pm-back", text: "← All projects" }),
-    el("h1", { class: "pm-title", text: p.name }),
+    el("h1", { class: "pm-title", text: p.name, "data-no-i18n": "" }),
     el(
       "p",
       { class: "pm-sub" },
@@ -724,7 +724,7 @@ function renderRoadmapPanel(p) {
       el(
         "div",
         { class: "pm-milestone-head" },
-        el("h3", { text: m.title }),
+        el("h3", { text: m.title, "data-no-i18n": "" }),
         statusSelect,
         m.target_date ? el("span", { class: "pm-task-due", text: formatDate(m.target_date) }) : null,
         clientChip(m.visible_to_client),
@@ -749,7 +749,7 @@ function renderRoadmapPanel(p) {
           },
         })
       ),
-      m.description ? el("p", { class: "pm-muted", text: m.description }) : null,
+      m.description ? el("p", { class: "pm-muted pm-milestone-desc", text: m.description }) : null,
       el("ul", { class: "pm-tasks" }, mTasks.map(taskRow)),
       addTaskForm(p.id, m.id)
     );
