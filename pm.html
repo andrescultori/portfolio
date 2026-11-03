@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-i18n-source="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -11,6 +11,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/styles.css">
   <link rel="stylesheet" href="css/pm.css">
+  <link rel="stylesheet" href="css/lang-toggle.css">
 </head>
 <body class="pm-body">
 
@@ -44,7 +45,7 @@
 
       <section id="pm-app" hidden>
         <div class="admin-panel-actions pm-tabs">
-          <a class="btn btn-ghost-light btn-sm" href="admin.html">Projetos</a>
+          <a class="btn btn-ghost-light btn-sm" href="admin.html">Portfolio projects</a>
           <a class="btn btn-ghost-light btn-sm" href="admin.html#site">Site</a>
           <span class="btn btn-primary btn-sm" aria-current="page">Project manager</span>
         </div>
@@ -93,7 +94,7 @@
       <div class="footer-bottom" style="border-top:1px solid rgba(244,243,240,.1); padding-top:20px;">
         <span>Private workspace.</span>
         <span>
-          Desenvolvido por
+          Built by
           <a href="https://github.com/andrescultori" target="_blank" rel="noopener">André Scultori</a>
           &nbsp;·&nbsp;© 2026&nbsp;·&nbsp;
           <a href="https://github.com/andrescultori/portfolio" target="_blank" rel="noopener">GitHub</a>
@@ -104,6 +105,8 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script src="js/supabase-config.js"></script>
+  <script src="js/i18n-pm.js"></script>
+  <script src="js/i18n.js"></script>
   <script src="js/pm.js"></script>
 </body>
 </html>
