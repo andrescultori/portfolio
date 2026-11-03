@@ -21,7 +21,6 @@
         Projects
       </a>
       <nav class="nav-links">
-        <a class="nav-link" href="admin.html">Portfolio admin</a>
         <button type="button" class="btn btn-ghost-dark btn-sm" id="btn-logout" hidden>Sign out</button>
       </nav>
     </div>
@@ -32,7 +31,8 @@
 
       <section id="pm-login" class="admin-card" hidden>
         <h1>Restricted area</h1>
-        <button type="button" class="btn btn-primary" id="btn-login-github">Sign in with GitHub</button>
+        <p class="pm-muted" style="margin:10px 0 16px;">Sign in once in the restricted area; you'll come back here automatically.</p>
+        <a class="btn btn-primary" id="btn-login-github" href="admin.html?next=pm">Sign in with GitHub</a>
         <p class="form-status" id="login-status"></p>
       </section>
 
@@ -43,6 +43,12 @@
       </section>
 
       <section id="pm-app" hidden>
+        <div class="admin-panel-actions pm-tabs">
+          <a class="btn btn-ghost-light btn-sm" href="admin.html">Projetos</a>
+          <a class="btn btn-ghost-light btn-sm" href="admin.html#site">Site</a>
+          <span class="btn btn-primary btn-sm" aria-current="page">Project manager</span>
+        </div>
+
         <div id="pm-list-view">
           <div class="pm-toolbar">
             <h1 class="pm-title">Projects</h1>

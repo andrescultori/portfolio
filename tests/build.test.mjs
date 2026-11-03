@@ -636,3 +636,15 @@ test("pm.html is copied by the build and loads supabase-config before pm.js", ()
   assert.ok(pm > config, "js/supabase-config.js must load before js/pm.js");
   assert.match(html, /<meta name="robots" content="noindex, nofollow">/);
 });
+
+test("pm uses the admin login (no OAuth of its own) and both pages link to each other", () => {
+  const pmHtml = readFileSync(path.join(REPO_ROOT, "pm.html"), "utf8");
+  const pmJs = readFileSync(path.join(REPO_ROOT, "js", "pm.js"), "utf8");
+  const adminHtml = readFileSync(path.join(REPO_ROOT, "admin.html"), "utf8");
+  const adminJs = readFileSync(path.join(REPO_ROOT, "js", "admin.js"), "utf8");
+  assert.doesNotMatch(pmJs, /signInWithOAuth/);
+  assert.match(pmHtml, /href="admin\.html\?next=pm"/);
+  assert.match(pmHtml, /href="admin\.html#site"/);
+  assert.match(adminHtml, /id="btn-tab-pm" href="pm\.html"/);
+  assert.match(adminJs, /next === "pm" \? "pm" : null/); // whitelist, not an open redirect
+});
