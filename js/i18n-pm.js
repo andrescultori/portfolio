@@ -83,6 +83,8 @@ window.I18N_PAGE = {
     "Move phase up": "Mover fase para cima", "Move phase down": "Mover fase para baixo",
     "Task order: by due date": "Ordem das tarefas: por data limite", "Task order: manual (↑ ↓)": "Ordem das tarefas: manual (↑ ↓)",
     "Task order": "Ordem das tarefas",
+    "Hidden phases don't appear on the client page (their visible tasks are listed without grouping).": "Fases ocultas não aparecem na página do cliente (as tarefas visíveis delas são listadas sem agrupamento).",
+    "Show all phases to client": "Mostrar todas as fases ao cliente", "Phases are now visible to the client": "As fases agora estão visíveis ao cliente",
     "Edit links": "Editar links", "Save": "Salvar",
     "repo": "repositório", "live": "ao vivo", "admin": "admin", "claude project": "projeto Claude",
     "supabase": "supabase", "docs": "docs", "drive": "drive",
@@ -107,7 +109,7 @@ window.I18N_PAGE = {
     "Could not load Supabase. Check your connection and reload.": "Não foi possível carregar o Supabase. Verifique a conexão e recarregue."
   },
   patterns: [
-    ["^(\\d+) tasks, (\\d+) phases, (\\d+) updates visible$", "$1 tarefas, $2 fases, $3 atualizações visíveis"],
+    ["^Visible to client: (\d+)/(\d+) tasks, (\d+)/(\d+) phases, (\d+)/(\d+) updates$", "Visível ao cliente: $1/$2 tarefas, $3/$4 fases, $5/$6 atualizações"],
     ["^(\\d+)/(\\d+) phases complete$", "$1/$2 fases concluídas"],
     ["^Detected (\\d+) new item\\(s\\) — review and press Save$", "$1 item(ns) novo(s) detectado(s) — revise e clique em Salvar"],
     ["^GitHub returned (\\d+)\\.$", "O GitHub retornou $1."],

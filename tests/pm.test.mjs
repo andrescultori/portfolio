@@ -79,9 +79,12 @@ test("buildShareLink works on localhost", () => {
 
 // --- clientViewSummary ---------------------------------------------------
 
-test("clientViewSummary reports N tasks, M phases, K updates visible", () => {
-  assert.equal(sandbox.clientViewSummary(0, 0, 0), "0 tasks, 0 phases, 0 updates visible");
-  assert.equal(sandbox.clientViewSummary(3, 1, 2), "3 tasks, 1 phases, 2 updates visible");
+test("clientViewSummary reports visible/total for tasks, phases and updates", () => {
+  const sum = (v, t) => sandbox.clientViewSummary(v, t);
+  assert.equal(sum({ tasks: 0, phases: 0, updates: 0 }, { tasks: 0, phases: 0, updates: 0 }),
+    "Visible to client: 0/0 tasks, 0/0 phases, 0/0 updates");
+  assert.equal(sum({ tasks: 10, phases: 0, updates: 0 }, { tasks: 14, phases: 3, updates: 1 }),
+    "Visible to client: 10/14 tasks, 0/3 phases, 0/1 updates");
 });
 
 // Note: NOTE_KINDS/CLIENT_LANGS are declared with `const` at module scope,
