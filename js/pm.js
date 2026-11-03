@@ -814,7 +814,7 @@ function renderInfoPanel(p) {
 /* Eye-icon toggle for visible_to_client — used on task/milestone/note
    rows alike. Accessible via aria-pressed + a descriptive aria-label
    (the glyph alone never carries the state). */
-function visibleToggleButton(isVisible, label, onToggle) {
+function visibleToggleButton(isVisible, label, onToggle, withText = false) {
   return el(
     "button",
     {
@@ -825,7 +825,7 @@ function visibleToggleButton(isVisible, label, onToggle) {
       title: isVisible ? "Visible to client — click to hide" : "Hidden from client — click to show",
       onclick: onToggle,
     },
-    el("span", { "aria-hidden": "true", text: isVisible ? "👁" : "–" })
+    el("span", { "aria-hidden": withText ? null : "true", text: withText ? (isVisible ? "👁 Visible to client" : "Hidden from client") : isVisible ? "👁" : "–" })
   );
 }
 
@@ -1030,6 +1030,7 @@ function phaseEditForm(m, total) {
   const target = el("input", { type: "date", value: m.target_date || "", "aria-label": "Target date" });
   const description = el("input", { type: "text", value: m.description || "", placeholder: "Description (optional)", "aria-label": "Description" });
   const status = el("select", { "aria-label": "Phase status" }, options(MILESTONE_STATUSES, m.status));
+  const visible = el("input", { type: "checkbox", checked: Boolean(m.visible_to_client) });
   const current = projectMilestones(m.project_id).findIndex((x) => x.id === m.id);
   const position = el("select", { "aria-label": "Order" },
     Array.from({ length: total }, (_, i) => el("option", { value: String(i), text: `#${i + 1}`, selected: i === current })));
@@ -1047,6 +1048,7 @@ function phaseEditForm(m, total) {
             target_date: target.value || null,
             description: description.value.trim() || null,
             status: status.value,
+            visible_to_client: visible.checked,
           }).eq("id", m.id).select().single(),
           "Saved"
         );
@@ -1059,6 +1061,7 @@ function phaseEditForm(m, total) {
       },
     },
     title, target, description, status, position,
+    el("label", { class: "pm-field pm-inline-field" }, visible, el("span", { text: "Show to client" })),
     el("button", { type: "submit", class: "btn btn-primary btn-sm", text: "Save" }),
     el("button", { type: "button", class: "btn btn-ghost-light btn-sm", text: "Cancel", onclick: () => { editingPhaseId = null; route(); } })
   );
@@ -1148,7 +1151,7 @@ function renderRoadmapPanel(p) {
           );
           if (updated) Object.assign(m, updated);
           route();
-        }),
+        }, true),
         ...arrowButtons("phase", () => movePhase(m, -1), () => movePhase(m, 1), phaseIndex === 0, phaseIndex === milestones.length - 1),
         el("button", { type: "button", class: "pm-icon-btn", title: "Edit phase", text: "✎", onclick: () => { editingPhaseId = m.id; route(); } }),
         el("button", {
@@ -1182,6 +1185,7 @@ function renderRoadmapPanel(p) {
 
   const title = el("input", { type: "text", placeholder: "New phase (e.g. Phase 1)…", required: true });
   const target = el("input", { type: "date", "aria-label": "Target date" });
+  const newVisible = el("input", { type: "checkbox" });
   const addMilestone = el(
     "form",
     {
@@ -1194,6 +1198,7 @@ function renderRoadmapPanel(p) {
             project_id: p.id,
             title: title.value.trim(),
             target_date: target.value || null,
+            visible_to_client: newVisible.checked,
             sort_order: milestones.length,
           }).select().single()
         );
@@ -1204,6 +1209,7 @@ function renderRoadmapPanel(p) {
     },
     title,
     target,
+    el("label", { class: "pm-field pm-inline-field" }, newVisible, el("span", { text: "Show to client" })),
     el("button", { type: "submit", class: "btn btn-ghost-light btn-sm", text: "Add phase" })
   );
 

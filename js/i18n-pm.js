@@ -85,6 +85,7 @@ window.I18N_PAGE = {
     "Task order": "Ordem das tarefas",
     "Hidden phases don't appear on the client page (their visible tasks are listed without grouping).": "Fases ocultas não aparecem na página do cliente (as tarefas visíveis delas são listadas sem agrupamento).",
     "Show all phases to client": "Mostrar todas as fases ao cliente", "Phases are now visible to the client": "As fases agora estão visíveis ao cliente",
+    "👁 Visible to client": "👁 Visível ao cliente", "Hidden from client": "Oculto do cliente",
     "Edit links": "Editar links", "Save": "Salvar",
     "repo": "repositório", "live": "ao vivo", "admin": "admin", "claude project": "projeto Claude",
     "supabase": "supabase", "docs": "docs", "drive": "drive",
