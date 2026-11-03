@@ -100,6 +100,10 @@ function isValidMetricItem(raw) {
   const labelEn = label.en == null ? "" : label.en;
   if (typeof labelPt !== "string" || labelPt.length > METRIC_LABEL_MAX) return false;
   if (typeof labelEn !== "string" || labelEn.length > METRIC_LABEL_MAX) return false;
+  // A hidden item's label never shows anywhere, so only a visible one must
+  // actually have a PT label — otherwise it'd render as a bare number.
+  const visible = raw.visible !== false;
+  if (visible && !labelPt.trim()) return false;
   return true;
 }
 
@@ -132,6 +136,13 @@ function desiredMetricsSignature(metrics) {
 
 function metricsSignaturesEqual(a, b) {
   return JSON.stringify(a) === JSON.stringify(b);
+}
+
+/* EN falls back to PT when blank — the home page is PT-first and the admin
+   may leave EN empty for a custom KPI. Used both when first rendering a
+   custom metric and when the language toggle re-derives its text. */
+function resolveMetricLabelText(labelPt, labelEn, lang) {
+  return lang === "en" ? labelEn || labelPt : labelPt;
 }
 
 function shouldRetypeOnLangChange(prevText, nextText) {
@@ -359,7 +370,7 @@ function buildMetricElement(item, lang) {
   const suffix = item.suffix || "";
   const labelPt = (item.label && item.label.pt) || "";
   const labelEn = (item.label && item.label.en) || "";
-  const labelText = lang === "en" ? labelEn || labelPt : labelPt;
+  const labelText = resolveMetricLabelText(labelPt, labelEn, lang);
 
   const valueEl = document.createElement("span");
   valueEl.className = "metric-value";
@@ -416,7 +427,7 @@ function updateCustomMetricsLanguage() {
     if (!labelEl) return;
     const pt = labelEl.getAttribute("data-metric-label-pt") || "";
     const en = labelEl.getAttribute("data-metric-label-en") || "";
-    const text = lang === "en" ? en || pt : pt;
+    const text = resolveMetricLabelText(pt, en, lang);
     labelEl.textContent = text;
     if (valueEl) {
       const prefix = valueEl.getAttribute("data-count-prefix") || "";

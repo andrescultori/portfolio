@@ -73,6 +73,10 @@ function isValidMetricItem(raw) {
   const labelEn = label.en ?? "";
   if (typeof labelPt !== "string" || labelPt.length > METRIC_LABEL_MAX) return false;
   if (typeof labelEn !== "string" || labelEn.length > METRIC_LABEL_MAX) return false;
+  // A hidden item's label never shows anywhere, so only a visible one must
+  // actually have a PT label — otherwise it'd render as a bare number.
+  const visible = raw.visible !== false;
+  if (visible && !labelPt.trim()) return false;
   return true;
 }
 
