@@ -76,6 +76,15 @@
               <input type="text" id="f-title">
             </div>
 
+            <div class="form-field">
+              <label for="f-category">Categoria *</label>
+              <select id="f-category">
+                <option value="data-bi">Dados & BI</option>
+                <option value="automation">Automação</option>
+                <option value="apps" selected>Apps</option>
+              </select>
+            </div>
+
             <div class="form-field full">
               <label for="f-cardImage">Imagem do card</label>
               <div class="admin-image-row">
@@ -123,6 +132,12 @@
               <input type="url" id="f-github" placeholder="https://github.com/...">
             </div>
 
+            <div class="form-field full">
+              <label for="f-powerbi">Link de embed do Power BI — opcional</label>
+              <input type="url" id="f-powerbi" placeholder="https://app.powerbi.com/view?r=...">
+              <p class="form-hint">Precisa começar com https://app.powerbi.com/ — qualquer outro domínio é rejeitado ao salvar.</p>
+            </div>
+
             <div class="form-field">
               <label for="f-note-pt">Nota / aviso (PT) — opcional</label>
               <input type="text" id="f-note-pt">
@@ -130,6 +145,52 @@
             <div class="form-field">
               <label for="f-note-en">Nota / aviso (EN) — opcional</label>
               <input type="text" id="f-note-en">
+            </div>
+
+            <div class="form-field full">
+              <label>Case study — opcional (deixe em branco o que não se aplica)</label>
+              <div class="admin-form-grid" style="margin-top:8px;">
+                <div class="form-field">
+                  <label for="f-case-problem-pt">Problema (PT)</label>
+                  <textarea id="f-case-problem-pt" rows="2"></textarea>
+                </div>
+                <div class="form-field">
+                  <label for="f-case-problem-en">Problema (EN)</label>
+                  <textarea id="f-case-problem-en" rows="2"></textarea>
+                </div>
+                <div class="form-field">
+                  <label for="f-case-data-pt">Dados (PT)</label>
+                  <textarea id="f-case-data-pt" rows="2"></textarea>
+                </div>
+                <div class="form-field">
+                  <label for="f-case-data-en">Dados (EN)</label>
+                  <textarea id="f-case-data-en" rows="2"></textarea>
+                </div>
+                <div class="form-field">
+                  <label for="f-case-approach-pt">Abordagem (PT)</label>
+                  <textarea id="f-case-approach-pt" rows="2"></textarea>
+                </div>
+                <div class="form-field">
+                  <label for="f-case-approach-en">Abordagem (EN)</label>
+                  <textarea id="f-case-approach-en" rows="2"></textarea>
+                </div>
+                <div class="form-field">
+                  <label for="f-case-insights-pt">Insights (PT)</label>
+                  <textarea id="f-case-insights-pt" rows="2"></textarea>
+                </div>
+                <div class="form-field">
+                  <label for="f-case-insights-en">Insights (EN)</label>
+                  <textarea id="f-case-insights-en" rows="2"></textarea>
+                </div>
+                <div class="form-field">
+                  <label for="f-case-impact-pt">Impacto (PT)</label>
+                  <textarea id="f-case-impact-pt" rows="2"></textarea>
+                </div>
+                <div class="form-field">
+                  <label for="f-case-impact-en">Impacto (EN)</label>
+                  <textarea id="f-case-impact-en" rows="2"></textarea>
+                </div>
+              </div>
             </div>
 
             <div class="admin-checks-row">

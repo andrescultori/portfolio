@@ -63,6 +63,10 @@ function showPanelSection() {
   document.getElementById("admin-panel").style.display = "block";
 }
 
+/* Mirrors CATEGORY_VALUES in scripts/lib/validate.mjs (Node module, can't
+   be imported from this browser classic script). Keep in sync by hand. */
+const CATEGORY_VALUES = ["data-bi", "automation", "apps"];
+
 function mapRowToProject(row) {
   return {
     slug: row.slug,
@@ -77,6 +81,9 @@ function mapRowToProject(row) {
     featured: !!row.featured,
     sortOrder: row.sort_order || 0,
     draft: !!row.draft,
+    category: row.category || "apps",
+    caseStudy: row.case_study || null,
+    powerbiUrl: row.powerbi_url || "",
   };
 }
 
@@ -94,7 +101,28 @@ function projectToRow(project) {
     featured: project.featured,
     sort_order: project.sortOrder,
     draft: project.draft,
+    category: project.category,
+    case_study: project.caseStudy,
+    powerbi_url: project.powerbiUrl || null,
   };
+}
+
+/* Case-study field keys, same order as scripts/lib/render-project-page.mjs's
+   CASE_STUDY_FIELDS / js/project.js's CASE_STUDY_FIELDS (mirrored by hand). */
+const CASE_STUDY_KEYS = ["problem", "data", "approach", "insights", "impact"];
+
+/* Mirrors isValidPowerBiUrl() in scripts/lib/validate.mjs (Node module,
+   can't be imported from this browser classic script) — same rule enforced
+   again here so the admin form rejects a bad URL before it ever reaches
+   the build, not just at the database's CHECK constraint. */
+function isValidPowerBiUrl(value) {
+  if (typeof value !== "string" || !value.trim()) return false;
+  try {
+    const url = new URL(value.trim());
+    return url.protocol === "https:" && url.hostname === "app.powerbi.com";
+  } catch (e) {
+    return false;
+  }
 }
 
 async function checkAuthAndRoute() {
@@ -268,6 +296,13 @@ function openForm(slug) {
   document.getElementById("f-github").value = p && p.links ? p.links.github || "" : "";
   document.getElementById("f-note-pt").value = p && p.note ? p.note.pt || "" : "";
   document.getElementById("f-note-en").value = p && p.note ? p.note.en || "" : "";
+  document.getElementById("f-category").value = (p && p.category) || "apps";
+  document.getElementById("f-powerbi").value = p ? p.powerbiUrl || "" : "";
+  CASE_STUDY_KEYS.forEach((key) => {
+    const field = p && p.caseStudy && p.caseStudy[key];
+    document.getElementById(`f-case-${key}-pt`).value = (field && field.pt) || "";
+    document.getElementById(`f-case-${key}-en`).value = (field && field.en) || "";
+  });
   document.getElementById("f-commercial").checked = !!(p && p.commercial);
   document.getElementById("f-featured").checked = !!(p && p.featured);
   document.getElementById("f-draft").checked = !!(p && p.draft);
@@ -348,7 +383,25 @@ async function handleFormSubmit(e) {
   const github = document.getElementById("f-github").value.trim();
   const notePt = document.getElementById("f-note-pt").value.trim();
   const noteEn = document.getElementById("f-note-en").value.trim();
+  const category = document.getElementById("f-category").value;
+  const powerbiUrl = document.getElementById("f-powerbi").value.trim();
   const existing = EDITING_SLUG === null ? null : PROJECTS.find((p) => p.slug === EDITING_SLUG);
+
+  if (!CATEGORY_VALUES.includes(category)) {
+    return setStatus(statusEl, "Categoria inválida.", "err");
+  }
+  if (powerbiUrl && !isValidPowerBiUrl(powerbiUrl)) {
+    return setStatus(statusEl, 'O link do Power BI precisa começar com "https://app.powerbi.com/".', "err");
+  }
+
+  const caseStudy = {};
+  let hasCaseStudy = false;
+  CASE_STUDY_KEYS.forEach((key) => {
+    const pt = document.getElementById(`f-case-${key}-pt`).value.trim();
+    const en = document.getElementById(`f-case-${key}-en`).value.trim();
+    if (pt || en) hasCaseStudy = true;
+    caseStudy[key] = { pt, en };
+  });
 
   const project = {
     slug,
@@ -362,6 +415,9 @@ async function handleFormSubmit(e) {
     stack,
     links: {},
     note: null,
+    category,
+    caseStudy: hasCaseStudy ? caseStudy : null,
+    powerbiUrl,
     commercial: document.getElementById("f-commercial").checked,
     featured: document.getElementById("f-featured").checked,
     sortOrder: existing ? existing.sortOrder : nextSortOrder(),

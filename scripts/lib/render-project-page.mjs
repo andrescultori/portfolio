@@ -1,5 +1,29 @@
 import { escapeHtml, safeJsonLd } from "./html.mjs";
 import { renderProjectFigure } from "./project-figures.mjs";
+import { categoryLabelPt } from "./render-card.mjs";
+
+/* Case-study block order/labels (PT). Mirrored by hand in js/project.js
+   (browser classic script) and js/i18n.js (PT/EN keys for the EN side,
+   rendered separately below in the "English version" block, same pattern
+   as description/note). Keep the 5 keys in sync with the
+   portfolio_projects.case_study shape: {problem, data, approach, insights, impact}. */
+const CASE_STUDY_FIELDS = [
+  { key: "problem", labelPt: "Problema", labelEn: "Problem" },
+  { key: "data", labelPt: "Dados", labelEn: "Data" },
+  { key: "approach", labelPt: "Abordagem", labelEn: "Approach" },
+  { key: "insights", labelPt: "Insights", labelEn: "Insights" },
+  { key: "impact", labelPt: "Impacto", labelEn: "Impact" },
+];
+
+function caseStudyBlocksHtml(caseStudy, lang) {
+  if (!caseStudy || typeof caseStudy !== "object") return [];
+  return CASE_STUDY_FIELDS.map((f) => {
+    const value = (caseStudy[f.key] && caseStudy[f.key][lang]) || "";
+    if (!value.trim()) return "";
+    const label = lang === "en" ? f.labelEn : f.labelPt;
+    return `<div class="case-study-block"><h4>${escapeHtml(label)}</h4><p class="prose">${escapeHtml(value)}</p></div>`;
+  }).filter(Boolean);
+}
 
 /* Standalone static page for dist/projeto/<slug>/index.html. Mirrors the
    header/nav/footer chrome and the #project-title/#project-tags/etc. DOM
@@ -98,12 +122,35 @@ export function renderProjectPage({ project, siteUrl, pageUrl, social }) {
           </div>`
     : `<div id="screenshots-section" style="display:none;"><div class="shot-grid" id="shot-grid"></div></div>`;
 
-  const enBlock = (descEn || noteEn)
+  const categoryBadgeHtml = `<span class="badge-category badge-category--${escapeHtml(
+    project.category || "apps"
+  )}">${escapeHtml(categoryLabelPt(project.category))}</span>`;
+
+  const caseStudyPtBlocks = caseStudyBlocksHtml(project.caseStudy, "pt");
+  const caseStudyHtml = caseStudyPtBlocks.length
+    ? `<section class="case-study" id="case-study" data-reveal>
+          <h3>Case study</h3>
+          ${caseStudyPtBlocks.join("\n          ")}
+        </section>`
+    : "";
+
+  const caseStudyEnBlocks = caseStudyBlocksHtml(project.caseStudy, "en");
+
+  const powerbiHtml = project.powerbiUrl
+    ? `<div class="powerbi-embed" id="powerbi-embed" data-reveal>
+          <div class="powerbi-embed-frame">
+            <iframe src="${escapeHtml(project.powerbiUrl)}" title="${escapeHtml(project.title)} — Power BI" loading="lazy" referrerpolicy="no-referrer" allowfullscreen></iframe>
+          </div>
+        </div>`
+    : "";
+
+  const enBlock = (descEn || noteEn || caseStudyEnBlocks.length)
     ? `
   <section class="wrap" lang="en" style="padding: 0 24px 48px; margin-top: 24px; border-top: 1px solid rgba(244,243,240,.1);">
     <h3 style="font-size:16px; font-weight:600; margin-bottom:8px;">English version</h3>
     ${descEn ? `<p class="prose">${escapeHtml(descEn)}</p>` : ""}
     ${noteEn ? `<p><em>${escapeHtml(noteEn)}</em></p>` : ""}
+    ${caseStudyEnBlocks.join("\n    ")}
   </section>`
     : "";
 
@@ -185,6 +232,7 @@ export function renderProjectPage({ project, siteUrl, pageUrl, social }) {
         <a class="back-link" href="../../index.html#projetos">&larr; <span>Voltar aos projetos</span></a>
         <div class="project-hero-top" data-reveal>
           <div>
+            <div id="project-category-badge">${categoryBadgeHtml}</div>
             <h1 id="project-title">${escapeHtml(project.title)}</h1>
             <div class="tag-row" id="project-tags">${renderStackTags(project.stack)}</div>
           </div>
@@ -203,6 +251,10 @@ export function renderProjectPage({ project, siteUrl, pageUrl, social }) {
           <div id="project-figure">${figureHtml}</div>
 
           ${shotsHtml}
+
+          ${powerbiHtml}
+
+          ${caseStudyHtml}
         </div>
 
         <aside class="side-card" data-reveal>
