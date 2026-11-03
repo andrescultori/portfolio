@@ -217,9 +217,48 @@ function initNavToggle() {
   var toggle = document.querySelector(".nav-toggle");
   var panel = document.querySelector(".nav-panel");
   if (!toggle || !panel) return;
+
+  function setOpen(open) {
+    panel.classList.toggle("is-open", open);
+    toggle.setAttribute("aria-expanded", open ? "true" : "false");
+  }
+  function isOpen() {
+    return panel.classList.contains("is-open");
+  }
+
   toggle.addEventListener("click", function () {
-    var isOpen = panel.classList.toggle("is-open");
-    toggle.setAttribute("aria-expanded", isOpen ? "true" : "false");
+    setOpen(!isOpen());
+  });
+
+  // Close when the visitor navigates (tap a link), scrolls away, presses
+  // Escape, taps outside the header, or the layout switches to desktop.
+  panel.addEventListener("click", function (event) {
+    if (event.target.closest("a")) setOpen(false);
+  });
+  document.addEventListener("keydown", function (event) {
+    if (event.key === "Escape" && isOpen()) {
+      setOpen(false);
+      toggle.focus();
+    }
+  });
+  document.addEventListener("click", function (event) {
+    if (isOpen() && !event.target.closest(".site-header")) setOpen(false);
+  });
+  // Scrolling the page closes the menu. A small threshold avoids closing it
+  // on the tiny scroll jitter some mobile browsers fire when a tap lands.
+  var openedAtY = 0;
+  toggle.addEventListener("click", function () {
+    openedAtY = window.scrollY;
+  });
+  window.addEventListener(
+    "scroll",
+    function () {
+      if (isOpen() && Math.abs(window.scrollY - openedAtY) > 24) setOpen(false);
+    },
+    { passive: true }
+  );
+  window.addEventListener("resize", function () {
+    if (isOpen() && window.innerWidth > 860) setOpen(false);
   });
 }
 
