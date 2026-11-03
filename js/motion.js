@@ -12,7 +12,6 @@ var MOTION_CONFIG = {
   cardSpotlight: true,
   viewTransitions: true,
   heroParallax: true,
-  toolsMarquee: true,
   scrollProgressBar: true,
   headerShrink: true,
   skeletonLoading: true,
@@ -173,7 +172,7 @@ function supportsFinePointer() {
 
 const isReducedMotion = prefersReducedMotion(getMatchMedia());
 
-// motion-<flag> classes let pure-CSS effects (e.g. the marquee) key off config.
+// motion-<flag> classes let a purely-CSS-gated effect key off the config.
 motionConfigClassNames(MOTION_CONFIG).forEach((name) => document.documentElement.classList.add(name));
 
 // @view-transition can't be scoped by a class, so the flag gates injecting it.

@@ -173,9 +173,9 @@ test("shouldRetypeOnLangChange only true when the text actually changed", () => 
 
 test("motionConfigClassNames emits motion-<kebab> only for true flags", () => {
   const names = Array.from(
-    sandbox.motionConfigClassNames({ rotateHeadline: true, heroParallax: false, toolsMarquee: true })
+    sandbox.motionConfigClassNames({ rotateHeadline: true, heroParallax: false, scrollProgressBar: true })
   ).sort();
-  assert.equal(JSON.stringify(names), JSON.stringify(["motion-rotate-headline", "motion-tools-marquee"]));
+  assert.equal(JSON.stringify(names), JSON.stringify(["motion-rotate-headline", "motion-scroll-progress-bar"]));
 });
 
 // --- shouldForceRevealFallback --------------------------------------------
