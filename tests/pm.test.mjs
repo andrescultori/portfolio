@@ -92,3 +92,11 @@ test("clientViewSummary reports N tasks, M milestones, K updates visible", () =>
 // `options(CLIENT_LANGS, p.client_lang, CLIENT_LANG_LABELS)` call sites,
 // which only matter once rendered — out of scope for this pure-function
 // test file.
+
+test("pm.js keeps the scroll position on re-render and only resets it when the view changes", async () => {
+  const { readFileSync } = await import("node:fs");
+  const src = readFileSync(new URL("../js/pm.js", import.meta.url), "utf8");
+  assert.ok(src.includes("function keepScroll("), "keepScroll helper");
+  assert.ok(!/route\(\)\s*\{[\s\S]*?window\.scrollTo\(0, 0\);\s*\}/.test(src), "route() must not always scroll to top");
+  assert.ok(src.includes("changedView"), "scroll reset is tied to a real view change");
+});

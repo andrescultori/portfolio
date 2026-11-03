@@ -182,14 +182,35 @@ function nextMilestone(projectId) {
 
 /* ---------- routing (#p/<slug> = detail) ---------- */
 
+let lastRouteKey = null;
+const renderList = () => keepScroll(renderListView);
+const renderDetail = (p) => keepScroll(() => renderDetailView(p));
+let listScrollY = 0;
+
+/* Re-renders (after an edit, toggle or filter) must not move the page: the
+   rebuilt DOM would otherwise reset the scroll position. */
+function keepScroll(render) {
+  const y = window.scrollY;
+  render();
+  window.scrollTo(0, y);
+}
+
 function route() {
   const match = window.location.hash.match(/^#p\/(.+)$/);
   const project = match && state.projects.find((p) => p.slug === decodeURIComponent(match[1]));
+  const key = project ? project.slug : "list";
+  const changedView = key !== lastRouteKey;
+  if (changedView && lastRouteKey === "list") listScrollY = window.scrollY;
   document.getElementById("pm-list-view").hidden = Boolean(project);
   document.getElementById("pm-detail-view").hidden = !project;
-  if (project) renderDetail(project);
-  else renderList();
-  window.scrollTo(0, 0);
+  keepScroll(() => {
+    if (project) renderDetail(project);
+    else renderList();
+  });
+  // Only a real navigation moves the page: a project opens at its top,
+  // and going back to the list returns to where you were.
+  if (changedView) window.scrollTo(0, project ? 0 : listScrollY);
+  lastRouteKey = key;
 }
 
 /* ---------- list view ---------- */
@@ -270,7 +291,7 @@ function projectCard(p) {
   );
 }
 
-function renderList() {
+function renderListView() {
   renderStats();
   renderChips("pm-owner-chips", OWNER_FILTERS, "owner");
   renderChips("pm-status-chips", STATUS_FILTERS, "status");
@@ -369,7 +390,7 @@ function field(label, input) {
   return el("label", { class: "pm-field" }, el("span", { text: label }), input);
 }
 
-function renderDetail(p) {
+function renderDetailView(p) {
   const view = document.getElementById("pm-detail-view");
   const prog = progress(p.id);
 
