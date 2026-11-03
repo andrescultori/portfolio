@@ -348,3 +348,20 @@ test("dist/_redirects and dist/robots.txt exist with the expected rules", { skip
   assert.match(robots, /Disallow: \/admin\.html/);
   assert.match(robots, /Disallow: \/pm\.html/);
 });
+
+test("classes combined with .wrap never zero the horizontal gutter", async () => {
+  const { readFile } = await import("node:fs/promises");
+  const css = await readFile(new URL("../css/site.css", import.meta.url), "utf8");
+  for (const cls of ["hero-inner", "contact-inner", "cs-cta-inner", "cs-results-row"]) {
+    const re = new RegExp("\\." + cls + "\\s*\\{[^}]*?padding:\\s*[^;]+;", "g");
+    assert.equal((css.match(re) || []).length, 0, "." + cls + " must use padding-block, not padding shorthand");
+  }
+});
+
+test("nav menu closes on scroll, Escape, link tap and resize", async () => {
+  const { readFile } = await import("node:fs/promises");
+  const js = await readFile(new URL("../js/motion.js", import.meta.url), "utf8");
+  for (const needle of ['addEventListener(\n    "scroll"', '"Escape"', 'closest("a")', '"resize"']) {
+    assert.ok(js.includes(needle), "missing: " + needle);
+  }
+});

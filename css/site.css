@@ -246,10 +246,13 @@ img { max-width: 100%; display: block; }
 
 /* -------------------------------------------------------------------------
    Hero
+   NOTE: elements that combine .wrap with a layout class must only set
+   vertical padding (padding-block). A padding shorthand here would wipe
+   .wrap's horizontal gutter and make content touch the screen edges.
    ------------------------------------------------------------------------- */
 
 .hero-inner {
-  padding: 88px 0 96px;
+  padding-block: 88px 96px;
   display: flex;
   gap: 64px;
   align-items: center;
@@ -313,7 +316,7 @@ img { max-width: 100%; display: block; }
 .dash-caption { margin: 10px 0 0; font-family: "IBM Plex Mono", monospace; font-size: 12px; color: var(--muted); }
 
 @media (max-width: 640px) {
-  .hero-inner { padding: 40px 0 48px; gap: 24px; }
+  .hero-inner { padding-block: 40px 48px; gap: 24px; }
   .hero-copy h1 { font-size: 32px; }
   .hero-sub { font-size: 17px; }
   .hero-actions { flex-direction: column; }
@@ -466,7 +469,7 @@ img { max-width: 100%; display: block; }
    ------------------------------------------------------------------------- */
 
 .contact-band { background: var(--dark-bg); color: var(--on-dark); }
-.contact-inner { padding: var(--section-pad) 0 56px; display: flex; flex-direction: column; gap: 56px; }
+.contact-inner { padding-block: var(--section-pad) 56px; display: flex; flex-direction: column; gap: 56px; }
 .contact-copy { max-width: 760px; display: flex; flex-direction: column; gap: 20px; }
 .contact-copy h2 { font-size: 44px; line-height: 1.1; font-weight: 600; letter-spacing: -0.025em; }
 .contact-copy p { font-size: 18px; color: var(--on-dark-muted); }
@@ -523,7 +526,7 @@ img { max-width: 100%; display: block; }
 .cs-meta-item .k { font-family: "IBM Plex Mono", monospace; font-size: 12px; color: var(--muted); }
 
 .cs-results { background: var(--dark-bg); color: var(--on-dark); }
-.cs-results-row { padding: 56px 0; display: flex; gap: 40px; flex-wrap: wrap; }
+.cs-results-row { padding-block: 56px; display: flex; gap: 40px; flex-wrap: wrap; }
 .cs-result { flex: 1 1 240px; display: flex; flex-direction: column; gap: 8px; }
 .cs-result .val { font-family: "IBM Plex Mono", monospace; font-size: 44px; font-weight: 500; letter-spacing: -0.02em; }
 .cs-result .label { font-size: 15px; color: var(--on-dark-muted); }
@@ -560,7 +563,7 @@ img { max-width: 100%; display: block; }
 .cs-results-table-row .metric-kind { flex: 0 0 90px; font-family: "IBM Plex Mono", monospace; font-size: 12px; color: var(--muted); }
 
 .cs-cta { background: var(--dark-bg); color: var(--on-dark); }
-.cs-cta-inner { padding: 88px 0 56px; display: flex; flex-direction: column; gap: 40px; }
+.cs-cta-inner { padding-block: 88px 56px; display: flex; flex-direction: column; gap: 40px; }
 .cs-cta-inner h2 { max-width: 760px; font-size: 38px; line-height: 1.15; font-weight: 600; letter-spacing: -0.02em; }
 
 /* Fallback project page (no case study) */
