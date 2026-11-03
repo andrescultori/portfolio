@@ -19,6 +19,19 @@ const PT = {
   link_more: "Veja mais",
 };
 
+/* Mirrors the category labels in js/i18n.js (PT) — this module only ever
+   renders the prerendered, PT-fixed HTML (see render-project-page.mjs's
+   own note on this). Keep in sync by hand if a category label changes. */
+const CATEGORY_LABELS_PT = {
+  "data-bi": "Dados & BI",
+  automation: "Automação",
+  apps: "Apps",
+};
+
+export function categoryLabelPt(category) {
+  return CATEGORY_LABELS_PT[category] || CATEGORY_LABELS_PT.apps;
+}
+
 export function renderCardHtml(project) {
   const desc = (project.description && project.description.pt) || "";
   const detailHref = `projeto.html?slug=${encodeURIComponent(project.slug)}`;
@@ -38,6 +51,10 @@ export function renderCardHtml(project) {
       ? `<span class="badge-commercial badge-commercial--inline">${PT.badge_commercial}</span>`
       : "";
 
+  const categoryBadge = `<span class="badge-category badge-category--${escapeHtml(
+    project.category || "apps"
+  )}">${escapeHtml(categoryLabelPt(project.category))}</span>`;
+
   const tags = (project.stack || []).map((s) => `<span class="tag">${escapeHtml(s)}</span>`).join("");
 
   const liveLink = project.links && project.links.live
@@ -51,6 +68,7 @@ export function renderCardHtml(project) {
     ${media}
     <div class="card-body">
       ${inlineBadge}
+      ${categoryBadge}
       <a class="card-title-link" href="${detailHref}"><h3>${escapeHtml(project.title)}</h3></a>
       <p>${escapeHtml(desc)}</p>
       <div class="tag-row">${tags}</div>

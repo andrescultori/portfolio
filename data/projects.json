@@ -1,6 +1,7 @@
 [
   {
     "slug": "lgnd-checklist",
+    "category": "apps",
     "title": "Legendários — Checklist de Equipamentos",
     "cardImage": "",
     "screenshots": [
@@ -28,6 +29,7 @@
   },
   {
     "slug": "dashboard-financeiro",
+    "category": "data-bi",
     "title": "Dashboard Financeiro",
     "cardImage": "",
     "screenshots": [],
@@ -50,6 +52,7 @@
   },
   {
     "slug": "processo-seletivo",
+    "category": "automation",
     "title": "Automação Completa do Processo Seletivo",
     "cardImage": "",
     "screenshots": [],
@@ -67,6 +70,7 @@
   },
   {
     "slug": "strava-dashboard",
+    "category": "data-bi",
     "title": "Dashboard Esportivo | Strava",
     "cardImage": "",
     "screenshots": [],
@@ -85,6 +89,7 @@
   },
   {
     "slug": "brasileirao-tracker",
+    "category": "apps",
     "title": "Tracker Estatístico — Brasileirão Série A",
     "cardImage": "",
     "screenshots": [],
@@ -103,6 +108,7 @@
   },
   {
     "slug": "teste-vocacional",
+    "category": "apps",
     "title": "Teste Vocacional Interativo",
     "cardImage": "",
     "screenshots": [],
@@ -120,6 +126,7 @@
   },
   {
     "slug": "mapa-mundial-perseguicao",
+    "category": "data-bi",
     "title": "Mapa Mundial da Perseguição — Portas Abertas",
     "cardImage": "",
     "screenshots": [],
@@ -138,6 +145,7 @@
   },
   {
     "slug": "timoteo-app",
+    "category": "apps",
     "title": "Timóteo App — Estudo Bíblico Interativo",
     "cardImage": "",
     "screenshots": [
@@ -162,6 +170,7 @@
   },
   {
     "slug": "apuracao-eleicoes",
+    "category": "apps",
     "title": "Apuração 2026 — Resultados Eleitorais em Tempo Real",
     "cardImage": "",
     "screenshots": [
@@ -186,6 +195,7 @@
   },
   {
     "slug": "portal-aluno",
+    "category": "apps",
     "title": "Portal do Aluno — UniMissional",
     "cardImage": "",
     "screenshots": [],
@@ -208,6 +218,7 @@
   },
   {
     "slug": "js-utils-automation",
+    "category": "automation",
     "title": "JS Utils Automation",
     "cardImage": "",
     "screenshots": [],
@@ -229,6 +240,7 @@
   },
   {
     "slug": "onica-perfumaria",
+    "category": "apps",
     "title": "Ônica Perfumaria — Formulário de Identidade Olfativa",
     "cardImage": "",
     "screenshots": [],

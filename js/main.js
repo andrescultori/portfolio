@@ -2,7 +2,46 @@
 
 let ALL_PROJECTS = [];
 let ACTIVE_STACK = null;
+let ACTIVE_CATEGORY = null;
 let HAS_RENDERED_ONCE = false;
+
+/* Fixed display order (not derived from data, unlike the stack chips) —
+   also doubles as the "Data & BI first" priority used when no filter is
+   active. Mirrored by hand in js/project.js/js/i18n.js's category_* keys. */
+const CATEGORY_ORDER = ["data-bi", "automation", "apps"];
+
+function categoryLabel(category) {
+  const key = { "data-bi": "category_data_bi", automation: "category_automation", apps: "category_apps" }[category];
+  return t(key || "category_apps");
+}
+
+function renderCategoryFilter() {
+  const wrap = document.getElementById("category-filter");
+  if (!wrap) return;
+  wrap.innerHTML = "";
+
+  const allChip = document.createElement("button");
+  allChip.className = "chip" + (ACTIVE_CATEGORY === null ? " is-active" : "");
+  allChip.type = "button";
+  allChip.textContent = t("filter_all");
+  allChip.addEventListener("click", () => {
+    ACTIVE_CATEGORY = null;
+    render();
+  });
+  wrap.appendChild(allChip);
+
+  CATEGORY_ORDER.forEach((category) => {
+    const chip = document.createElement("button");
+    chip.className = "chip" + (ACTIVE_CATEGORY === category ? " is-active" : "");
+    chip.type = "button";
+    chip.textContent = categoryLabel(category);
+    chip.addEventListener("click", () => {
+      ACTIVE_CATEGORY = ACTIVE_CATEGORY === category ? null : category;
+      render();
+    });
+    wrap.appendChild(chip);
+  });
+}
 
 function iconSvg(name) {
   const icons = {
@@ -93,6 +132,9 @@ function projectCard(project) {
         ? `<span class="badge-commercial badge-commercial--inline">${t("badge_commercial")}</span>`
         : ""
     }
+    <span class="badge-category badge-category--${escapeHtml(project.category || "apps")}">${escapeHtml(
+      categoryLabel(project.category)
+    )}</span>
     <a class="card-title-link" href="${detailHref}"><h3>${escapeHtml(project.title)}</h3></a>
     <p>${escapeHtml(desc)}</p>
     <div class="tag-row">
@@ -119,9 +161,14 @@ function projectCard(project) {
 
 function render() {
   renderStackFilter(ALL_PROJECTS);
+  renderCategoryFilter();
 
-  const visible =
-    ACTIVE_STACK === null ? ALL_PROJECTS : ALL_PROJECTS.filter((p) => p.stack.includes(ACTIVE_STACK));
+  const noFiltersActive = ACTIVE_STACK === null && ACTIVE_CATEGORY === null;
+  const visible = ALL_PROJECTS.filter(
+    (p) =>
+      (ACTIVE_STACK === null || p.stack.includes(ACTIVE_STACK)) &&
+      (ACTIVE_CATEGORY === null || p.category === ACTIVE_CATEGORY)
+  );
 
   const status = document.getElementById("filter-status");
   if (ACTIVE_STACK !== null) {
@@ -148,7 +195,16 @@ function render() {
   } else {
     grid.style.display = "grid";
     empty.style.display = "none";
-    visible.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+    if (noFiltersActive) {
+      // Data & BI first, Automation next, Apps last — sort_order still
+      // decides the order of projects within each category group.
+      visible.sort((a, b) => {
+        const catDiff = CATEGORY_ORDER.indexOf(a.category) - CATEGORY_ORDER.indexOf(b.category);
+        return catDiff !== 0 ? catDiff : (a.sortOrder || 0) - (b.sortOrder || 0);
+      });
+    } else {
+      visible.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+    }
     visible.forEach((p) => grid.appendChild(projectCard(p)));
   }
 
