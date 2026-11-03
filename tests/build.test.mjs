@@ -255,7 +255,7 @@ test("renderNoscriptList links to the static per-project pages", () => {
 
 // --- render-project-page -------------------------------------------------------
 
-test("renderProjectPage includes title, meta description, canonical, OG and JSON-LD", () => {
+test("renderProjectPage includes title, meta description, canonical, hreflang, OG and JSON-LD", () => {
   const project = {
     slug: "demo",
     title: "Demo Project",
@@ -268,22 +268,41 @@ test("renderProjectPage includes title, meta description, canonical, OG and JSON
     commercial: false,
     featured: false,
     sortOrder: 0,
+    category: "apps",
   };
   const { html, hasImage } = renderProjectPage({
+    lang: "en",
     project,
     siteUrl: "https://andrescultori.vercel.app",
-    pageUrl: "https://andrescultori.vercel.app/projeto/demo/",
     social: { github: "https://github.com/andrescultori" },
   });
 
   assert.ok(hasImage);
-  assert.match(html, /<title>Demo Project — André Scultori<\/title>/);
-  assert.match(html, /<meta name="description" content="Descri[^"]*ortugu[^"]*s\.">/);
-  assert.match(html, /<link rel="canonical" href="https:\/\/andrescultori\.vercel\.app\/projeto\/demo\/">/);
+  assert.match(html, /<title>Demo Project \| André Scultori<\/title>/);
+  assert.match(html, /<meta name="description" content="English description\.">/);
+  assert.match(html, /<link rel="canonical" href="https:\/\/andrescultori\.vercel\.app\/projects\/demo\/">/);
+  assert.match(html, /<link rel="alternate" hreflang="en" href="https:\/\/andrescultori\.vercel\.app\/projects\/demo\/">/);
+  assert.match(html, /<link rel="alternate" hreflang="pt-BR" href="https:\/\/andrescultori\.vercel\.app\/pt\/projetos\/demo\/">/);
+  assert.match(html, /<link rel="alternate" hreflang="x-default" href="https:\/\/andrescultori\.vercel\.app\/projects\/demo\/">/);
   assert.match(html, /<meta property="og:image" content="https:\/\/andrescultori\.vercel\.app\/img\/projects\/demo\/cover\.png">/);
   assert.match(html, /"@type":"CreativeWork"/);
-  assert.match(html, /lang="en"/);
   assert.match(html, /English description\./);
+});
+
+test("renderProjectPage falls back to PT when the current language's description is empty, with the right lang attribute", () => {
+  const project = {
+    slug: "pt-only",
+    title: "PT Only",
+    cardImage: "",
+    screenshots: [],
+    description: { pt: "Só em português.", en: "" },
+    stack: [],
+    links: {},
+    note: null,
+    category: "apps",
+  };
+  const { html } = renderProjectPage({ lang: "en", project, siteUrl: "https://example.com", social: {} });
+  assert.match(html, /<p lang="pt-BR">Só em português\.<\/p>/);
 });
 
 test("renderProjectPage omits og:image when no image is available", () => {
@@ -296,13 +315,9 @@ test("renderProjectPage omits og:image when no image is available", () => {
     stack: [],
     links: {},
     note: null,
+    category: "apps",
   };
-  const { html, hasImage } = renderProjectPage({
-    project,
-    siteUrl: "https://andrescultori.vercel.app",
-    pageUrl: "https://andrescultori.vercel.app/projeto/no-image/",
-    social: {},
-  });
+  const { html, hasImage } = renderProjectPage({ lang: "en", project, siteUrl: "https://andrescultori.vercel.app", social: {} });
   assert.equal(hasImage, false);
   assert.ok(!html.includes('property="og:image"'));
 });
@@ -343,11 +358,12 @@ test("renderProjectPage neutralizes a script-breakout title in both HTML and JSO
     stack: [],
     links: {},
     note: null,
+    category: "apps",
   };
   const { html } = renderProjectPage({
+    lang: "en",
     project,
     siteUrl: "https://andrescultori.vercel.app",
-    pageUrl: "https://andrescultori.vercel.app/projeto/xss-demo/",
     social: {},
   });
 
@@ -584,43 +600,6 @@ test("shouldRerouteOnAuthEvent reroutes for a new login (different user, or none
   assert.equal(shouldRerouteOnAuthEvent("SIGNED_IN", "user-2", "user-1"), true);
   assert.equal(shouldRerouteOnAuthEvent("SIGNED_IN", "user-1", null), true);
   assert.equal(shouldRerouteOnAuthEvent("SIGNED_IN", null, null), true);
-});
-
-// --- script load order: supabase-config.js before i18n.js/social.js ----------
-
-test("index.html loads js/supabase-config.js before js/i18n.js and js/social.js", () => {
-  const html = readFileSync(path.join(REPO_ROOT, "index.html"), "utf8");
-  assertSupabaseConfigLoadsBeforeDependents(html, "index.html");
-});
-
-test("projeto.html loads js/supabase-config.js before js/i18n.js and js/social.js", () => {
-  const html = readFileSync(path.join(REPO_ROOT, "projeto.html"), "utf8");
-  assertSupabaseConfigLoadsBeforeDependents(html, "projeto.html");
-});
-
-test("contato.html loads js/supabase-config.js before js/i18n.js and js/social.js", () => {
-  const html = readFileSync(path.join(REPO_ROOT, "contato.html"), "utf8");
-  assertSupabaseConfigLoadsBeforeDependents(html, "contato.html");
-});
-
-test("renderProjectPage's static output (dist/projeto/<slug>/index.html) loads js/supabase-config.js before js/i18n.js and js/social.js", () => {
-  const project = {
-    slug: "demo",
-    title: "Demo",
-    cardImage: "",
-    screenshots: [],
-    description: { pt: "d", en: "d" },
-    stack: [],
-    links: {},
-    note: null,
-  };
-  const { html } = renderProjectPage({
-    project,
-    siteUrl: "https://andrescultori.pages.dev",
-    pageUrl: "https://andrescultori.pages.dev/projeto/demo/",
-    social: {},
-  });
-  assertSupabaseConfigLoadsBeforeDependents(html, "dist/projeto/<slug>/index.html");
 });
 
 // --- pm.html (project manager) ---------------------------------------

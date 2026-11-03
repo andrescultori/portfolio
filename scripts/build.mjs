@@ -9,35 +9,49 @@ import { loadSocialLinks } from "./lib/social.mjs";
 import { validateProject, isValidUrl, BuildValidationError } from "./lib/validate.mjs";
 import { slugify } from "./lib/slug.mjs";
 import { resetDist, copySiteFiles } from "./lib/copy.mjs";
-import { renderCardHtml, renderNoscriptList } from "./lib/render-card.mjs";
+import { renderHomePage } from "./lib/render-home.mjs";
+import { renderWorkIndexPage } from "./lib/render-work-index.mjs";
 import { renderProjectPage } from "./lib/render-project-page.mjs";
-import { buildSitemap, buildRobotsTxt, buildPersonJsonLd } from "./lib/seo.mjs";
+import { buildSitemapWithAlternates, buildRobotsTxt, buildPersonJsonLd } from "./lib/seo.mjs";
+import { buildRedirects } from "./lib/redirects.mjs";
 import { resolveSiteUrl } from "./lib/site-url.mjs";
-import { safeJsonLd } from "./lib/html.mjs";
-import {
-  SITE_SETTINGS_TEXT_KEYS,
-  fetchSiteSettings,
-  resolvePhotoUrl,
-  substituteDataI18n,
-  replaceHrefById,
-  replaceImgSrcById,
-  replaceTextById,
-  substituteMetrics,
-} from "./lib/site-settings.mjs";
+import { homePath, workIndexPath, projectPath, absoluteUrl } from "./lib/public-urls.mjs";
+import { fetchSiteSettings, resolvePhotoUrl } from "./lib/site-settings.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.join(__dirname, "..");
 const DIST = path.join(ROOT, "dist");
 const SITE_SETTINGS_STORAGE_BUCKET = "portfolio-images";
+const LANGS = ["en", "pt"];
 
-const INCLUDE = ["index.html", "projeto.html", "contato.html", "admin.html", "pm.html", "css", "js", "img", "data"];
-
-const CARDS_MARKER = /<!-- PRERENDER:CARDS:START -->[\s\S]*?<!-- PRERENDER:CARDS:END -->/;
-const NOSCRIPT_MARKER = "<!-- PRERENDER:NOSCRIPT -->";
+/* Only admin.html/pm.html are copied as static templates now — every
+   public page (home, /work/, project pages, both languages) is fully
+   rendered from scripts/lib/render-*.mjs below, no HTML template file. */
+const INCLUDE = ["admin.html", "pm.html", "css", "js", "img", "data"];
 
 function log(msg) {
   console.log(`[build] ${msg}`);
 }
+
+function trimSlashes(p) {
+  return p.replace(/^\/+|\/+$/g, "");
+}
+
+function writePage(relUrlPath, html) {
+  const outPath = path.join(DIST, trimSlashes(relUrlPath), "index.html");
+  mkdirSync(path.dirname(outPath), { recursive: true });
+  writeFileSync(outPath, html, "utf8");
+}
+
+function readJson(relPath, fallback) {
+  try {
+    return JSON.parse(readFileSync(path.join(ROOT, relPath), "utf8"));
+  } catch (e) {
+    return fallback;
+  }
+}
+
+const JOB_TITLE = { en: "BI & Automation Consultant", pt: "Consultor de BI & Automação" };
 
 async function main() {
   const warnings = [];
@@ -80,7 +94,8 @@ async function main() {
   const projects = rawProjects.filter((p) => !p.draft);
   const draftDiscarded = beforeDraftFilter - projects.length;
 
-  // Required-field validation — fatal on the first invalid project.
+  // Required-field validation (now includes case_study.metrics) — fatal on
+  // the first invalid project.
   projects.forEach((p, i) => validateProject(p, `índice ${i}`));
 
   // Slug normalization + collision detection.
@@ -110,7 +125,8 @@ async function main() {
     }
   });
 
-  // EN coverage.
+  // EN coverage — informational only; renderProjectPage falls back to PT
+  // (with the correct lang attribute) wherever EN text is missing.
   const missingEn = [];
   projects.forEach((p) => {
     const descEnMissing = !p.description.en || !p.description.en.trim();
@@ -121,19 +137,33 @@ async function main() {
     warnings.push(`Projetos sem versão EN completa (description.en e/ou note.en): ${missingEn.join(", ")}`);
   }
 
-  // Same listing order as main.js.
+  // Default listing order; render-home.mjs/render-work-index.mjs re-sort
+  // by category/sortOrder as needed for their own sections.
   projects.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
 
   // --- Write dist/ ---
   resetDist(DIST);
   copySiteFiles(ROOT, DIST, INCLUDE);
 
+  const services = readJson("data/services.json", []);
+  const processSteps = readJson("data/process.json", []);
+  const clients = readJson("data/clients.json", []);
+
   let social;
   try {
     social = loadSocialLinks(socialPath);
   } catch (e) {
     warnings.push(`Não consegui ler js/social.js (${e.message}).`);
-    social = { linkedin: "", instagram: "", github: "https://github.com/andrescultori", email: "", resume: "" };
+    social = {
+      linkedin: "",
+      instagram: "",
+      github: "https://github.com/andrescultori",
+      email: "",
+      resume: "",
+      booking: "",
+      cv_en: "",
+      cv_pt: "",
+    };
   }
 
   // Site settings (admin-editable text/photo/links) — Supabase-first, same
@@ -151,6 +181,10 @@ async function main() {
     github: (siteSettings && siteSettings.links.github) || social.github,
     linkedin: (siteSettings && siteSettings.links.linkedin) || social.linkedin,
     instagram: (siteSettings && siteSettings.links.instagram) || social.instagram,
+    booking: (siteSettings && siteSettings.links.booking) || social.booking,
+    cv_en: (siteSettings && siteSettings.links.cv_en) || social.cv_en,
+    cv_pt: (siteSettings && siteSettings.links.cv_pt) || social.cv_pt,
+    email: social.email,
   };
 
   const photoUrl = siteSettings
@@ -161,102 +195,95 @@ async function main() {
         updatedAt: siteSettings.updatedAt,
       })
     : "";
-
-  const ptOverrides = (siteSettings && siteSettings.i18nOverrides.pt) || {};
-
-  // index.html
-  const indexPath = path.join(DIST, "index.html");
-  let indexHtml = readFileSync(indexPath, "utf8");
-
-  if (!CARDS_MARKER.test(indexHtml)) {
-    throw new Error(
-      "Marcadores <!-- PRERENDER:CARDS:START/END --> não encontrados em index.html."
-    );
-  }
-  const cardsHtml = projects.map(renderCardHtml).join("\n");
-  indexHtml = indexHtml.replace(
-    CARDS_MARKER,
-    `<!-- PRERENDER:CARDS:START -->\n${cardsHtml}\n<!-- PRERENDER:CARDS:END -->`
-  );
-
-  if (!indexHtml.includes(NOSCRIPT_MARKER)) {
-    throw new Error(`Marcador ${NOSCRIPT_MARKER} não encontrado em index.html.`);
-  }
-  indexHtml = indexHtml.replace(NOSCRIPT_MARKER, renderNoscriptList(projects));
-
-  // Metrics strip (home KPIs): only replaces the 4 built-in defaults when
-  // there's a valid override — a no-op (returns indexHtml unchanged)
-  // otherwise, so this never risks blanking the strip.
-  indexHtml = substituteMetrics(indexHtml, siteSettings ? siteSettings.metrics : null);
-
-  // Site settings: text overrides (PT, no-op where a key doesn't appear on
-  // this page), social hrefs, and the hero photo.
-  for (const key of SITE_SETTINGS_TEXT_KEYS) {
-    if (ptOverrides[key]) indexHtml = substituteDataI18n(indexHtml, key, ptOverrides[key]);
-  }
-  indexHtml = replaceHrefById(indexHtml, "github-link", effectiveLinks.github);
-  indexHtml = replaceHrefById(indexHtml, "github-link-footer", effectiveLinks.github);
-  indexHtml = replaceHrefById(indexHtml, "linkedin-link", effectiveLinks.linkedin);
-  indexHtml = replaceHrefById(indexHtml, "linkedin-link-footer", effectiveLinks.linkedin);
-  if (photoUrl) indexHtml = replaceImgSrcById(indexHtml, "hero-photo", photoUrl);
-
-  const personJsonLd = buildPersonJsonLd({ siteUrl: SITE_URL, social: effectiveLinks, image: photoUrl || undefined });
-  const ogImageTag = photoUrl ? `\n  <meta property="og:image" content="${photoUrl}">` : "";
-  const headExtra = `  <link rel="canonical" href="${SITE_URL}/">
-  <meta property="og:url" content="${SITE_URL}/">${ogImageTag}
-  <script type="application/ld+json">${safeJsonLd(personJsonLd)}</script>
-</head>`;
-  indexHtml = indexHtml.replace("</head>", headExtra);
   if (!photoUrl) {
-    warnings.push(
-      "Home: og:image omitido — nenhuma foto configurada (nem em portfolio_site_settings, nem em img/profile/andre.jpg)."
-    );
+    warnings.push("Home: og:image/foto do About omitidos — nenhuma foto configurada em portfolio_site_settings.");
   }
 
-  writeFileSync(indexPath, indexHtml, "utf8");
-
-  // contato.html: same text/href substitutions, no SEO meta changes (out of
-  // scope for this task — index.html already carries the site-wide tags).
-  const contatoPath = path.join(DIST, "contato.html");
-  let contatoHtml = readFileSync(contatoPath, "utf8");
-  for (const key of SITE_SETTINGS_TEXT_KEYS) {
-    if (ptOverrides[key]) contatoHtml = substituteDataI18n(contatoHtml, key, ptOverrides[key]);
+  const heroOverrides = { en: {}, pt: {} };
+  for (const lang of LANGS) {
+    const langOverrides = (siteSettings && siteSettings.i18nOverrides[lang]) || {};
+    heroOverrides[lang] = { role: langOverrides.hero_role, bio: langOverrides.hero_bio };
   }
-  contatoHtml = replaceHrefById(contatoHtml, "github-contact", effectiveLinks.github);
-  contatoHtml = replaceHrefById(contatoHtml, "linkedin-contact", effectiveLinks.linkedin);
-  contatoHtml = replaceHrefById(contatoHtml, "instagram-contact", effectiveLinks.instagram);
-  if (siteSettings && siteSettings.links.github) {
-    contatoHtml = replaceTextById(
-      contatoHtml,
-      "github-contact-label",
-      effectiveLinks.github.replace(/^https:\/\//i, "")
-    );
-  }
-  writeFileSync(contatoPath, contatoHtml, "utf8");
 
-  // Per-project static pages.
-  mkdirSync(path.join(DIST, "projeto"), { recursive: true });
+  const sitemapEntries = [];
+  function addSitemapPair(pathFn) {
+    sitemapEntries.push({
+      loc: absoluteUrl(SITE_URL, pathFn("en")),
+      altEn: absoluteUrl(SITE_URL, pathFn("en")),
+      altPt: absoluteUrl(SITE_URL, pathFn("pt")),
+    });
+    sitemapEntries.push({
+      loc: absoluteUrl(SITE_URL, pathFn("pt")),
+      altEn: absoluteUrl(SITE_URL, pathFn("en")),
+      altPt: absoluteUrl(SITE_URL, pathFn("pt")),
+    });
+  }
+
+  // Home page (both languages).
+  for (const lang of LANGS) {
+    const jsonLd = buildPersonJsonLd({
+      siteUrl: SITE_URL,
+      social: effectiveLinks,
+      image: photoUrl || undefined,
+      jobTitle: JOB_TITLE[lang],
+      knowsAbout: services.map((svc) => (svc.title && (svc.title[lang] || svc.title.en)) || "").filter(Boolean),
+    });
+    const html = renderHomePage({
+      lang,
+      projects,
+      services,
+      process: processSteps,
+      clients,
+      siteUrl: SITE_URL,
+      social: effectiveLinks,
+      photoUrl,
+      heroOverrides: heroOverrides[lang],
+      jsonLd,
+    });
+    writePage(homePath(lang), html);
+  }
+  addSitemapPair(homePath);
+
+  // /work/ index (both languages).
+  for (const lang of LANGS) {
+    const html = renderWorkIndexPage({ lang, projects, siteUrl: SITE_URL, social: effectiveLinks });
+    writePage(workIndexPath(lang), html);
+  }
+  addSitemapPair(workIndexPath);
+
+  // Project pages (both languages each).
   const imagesMissing = [];
-  for (const project of projects) {
-    const pageUrl = `${SITE_URL}/projeto/${project.slug}/`;
-    const { html, hasImage } = renderProjectPage({ project, siteUrl: SITE_URL, pageUrl, social });
-    if (!hasImage) imagesMissing.push(project.slug);
-    const dir = path.join(DIST, "projeto", project.slug);
-    mkdirSync(dir, { recursive: true });
-    writeFileSync(path.join(dir, "index.html"), html, "utf8");
-  }
+  projects.forEach((project, i) => {
+    const next = projects.length > 1 ? projects[(i + 1) % projects.length] : null;
+    LANGS.forEach((lang) => {
+      const { html, hasImage } = renderProjectPage({
+        lang,
+        project,
+        siteUrl: SITE_URL,
+        social: effectiveLinks,
+        nextProject: next,
+      });
+      if (!hasImage && lang === "en") imagesMissing.push(project.slug);
+      writePage(projectPath(lang, project.slug), html);
+    });
+    addSitemapPair((lang) => projectPath(lang, project.slug));
+  });
   if (imagesMissing.length) {
     warnings.push(`Sem imagem para og:image (cardImage/screenshots vazios): ${imagesMissing.join(", ")}`);
   }
 
-  // sitemap.xml + robots.txt
-  const urls = [`${SITE_URL}/`, `${SITE_URL}/contato.html`, ...projects.map((p) => `${SITE_URL}/projeto/${p.slug}/`)];
-  writeFileSync(path.join(DIST, "sitemap.xml"), buildSitemap(urls), "utf8");
-  writeFileSync(path.join(DIST, "robots.txt"), buildRobotsTxt(SITE_URL), "utf8");
+  // sitemap.xml + robots.txt + _redirects
+  writeFileSync(path.join(DIST, "sitemap.xml"), buildSitemapWithAlternates(sitemapEntries), "utf8");
+  writeFileSync(
+    path.join(DIST, "robots.txt"),
+    buildRobotsTxt(SITE_URL, { disallow: ["/admin.html", "/pm.html"] }),
+    "utf8"
+  );
+  writeFileSync(path.join(DIST, "_redirects"), buildRedirects(projects.map((p) => p.slug)), "utf8");
 
   // --- Summary ---
   log(`Fonte de dados usada: ${source}`);
-  log(`Projetos gerados: ${projects.length}`);
+  log(`Projetos gerados: ${projects.length} (x2 idiomas = ${projects.length * 2} páginas de projeto)`);
   log(`Rascunhos descartados (draft=true): ${draftDiscarded}`);
   log(`Links inválidos descartados: ${discardedLinks}`);
   warnings.forEach((w) => console.warn(`[build] AVISO: ${w}`));

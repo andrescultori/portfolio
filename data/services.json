@@ -1,0 +1,77 @@
+[
+  {
+    "id": "dashboards",
+    "number": "01",
+    "title": { "pt": "Dashboards & relatórios", "en": "Dashboards & reporting" },
+    "pain": {
+      "pt": "Seus números vivem em cinco planilhas diferentes e ninguém confia totalmente neles.",
+      "en": "Your numbers live in five spreadsheets and nobody fully trusts them."
+    },
+    "bullets": [
+      {
+        "pt": "KPIs definidos com o seu time antes de qualquer coisa ser construída",
+        "en": "KPIs defined with your team before anything is built"
+      },
+      {
+        "pt": "Relatório em Power BI sobre um modelo de dados documentado",
+        "en": "Power BI report on a documented data model"
+      },
+      {
+        "pt": "Entrega com treinamento rápido da equipe",
+        "en": "Handover and a short training session"
+      }
+    ],
+    "timeline": { "pt": "", "en": "" },
+    "pricing": null
+  },
+  {
+    "id": "automation",
+    "number": "02",
+    "title": { "pt": "Automação de processos", "en": "Process automation" },
+    "pain": {
+      "pt": "Seu time redigita os mesmos dados entre sistemas toda semana.",
+      "en": "Your team re-types the same data between systems every week."
+    },
+    "bullets": [
+      {
+        "pt": "Processo atual mapeado passo a passo",
+        "en": "Current process mapped step by step"
+      },
+      {
+        "pt": "Cenários no Make.com conectando CRM, formulários, planilhas, e-mail e WhatsApp",
+        "en": "Make.com scenarios connecting your CRM, forms, sheets, email and WhatsApp"
+      },
+      {
+        "pt": "Alertas de erro e um manual de operação que o seu time consegue seguir",
+        "en": "Error alerts and a runbook your team can follow"
+      }
+    ],
+    "timeline": { "pt": "", "en": "" },
+    "pricing": null
+  },
+  {
+    "id": "data-foundations",
+    "number": "03",
+    "title": { "pt": "Fundação de dados", "en": "Data foundations" },
+    "pain": {
+      "pt": "Suas planilhas cresceram mais do que a forma como você as usa.",
+      "en": "Your spreadsheets have outgrown the way you use them."
+    },
+    "bullets": [
+      {
+        "pt": "Fontes consolidadas, limpas e documentadas",
+        "en": "Sources consolidated, cleaned and documented"
+      },
+      {
+        "pt": "Um banco de dados de verdade (Supabase) ou um modelo limpo em Excel/Sheets",
+        "en": "A proper database (Supabase) or a clean Excel / Sheets model"
+      },
+      {
+        "pt": "Controle de acesso e tratamento cuidadoso de dados pessoais (LGPD)",
+        "en": "Access control and careful handling of personal data (LGPD)"
+      }
+    ],
+    "timeline": { "pt": "", "en": "" },
+    "pricing": null
+  }
+]

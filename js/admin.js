@@ -111,6 +111,11 @@ function projectToRow(project) {
    CASE_STUDY_FIELDS / js/project.js's CASE_STUDY_FIELDS (mirrored by hand). */
 const CASE_STUDY_KEYS = ["problem", "data", "approach", "insights", "impact"];
 
+/* Mirrors CASE_STUDY_METRICS_MAX/CASE_STUDY_METRIC_KIND_VALUES in
+   scripts/lib/validate.mjs (Node module, can't be imported here). */
+const CASE_STUDY_METRICS_MAX = 3;
+const CASE_STUDY_METRIC_KIND_VALUES = ["measured", "estimated"];
+
 /* Mirrors isValidPowerBiUrl() in scripts/lib/validate.mjs (Node module,
    can't be imported from this browser classic script) — same rule enforced
    again here so the admin form rejects a bad URL before it ever reaches
@@ -333,6 +338,14 @@ function openForm(slug) {
     document.getElementById(`f-case-${key}-pt`).value = (field && field.pt) || "";
     document.getElementById(`f-case-${key}-en`).value = (field && field.en) || "";
   });
+  const metrics = (p && p.caseStudy && p.caseStudy.metrics) || [];
+  for (let i = 0; i < CASE_STUDY_METRICS_MAX; i++) {
+    const m = metrics[i];
+    document.getElementById(`f-metric-${i}-value`).value = (m && m.value) || "";
+    document.getElementById(`f-metric-${i}-kind`).value = (m && m.kind) || "measured";
+    document.getElementById(`f-metric-${i}-label-pt`).value = (m && m.label && m.label.pt) || "";
+    document.getElementById(`f-metric-${i}-label-en`).value = (m && m.label && m.label.en) || "";
+  }
   document.getElementById("f-commercial").checked = !!(p && p.commercial);
   document.getElementById("f-featured").checked = !!(p && p.featured);
   document.getElementById("f-draft").checked = !!(p && p.draft);
@@ -433,6 +446,29 @@ async function handleFormSubmit(e) {
     caseStudy[key] = { pt, en };
   });
 
+  const metrics = [];
+  for (let i = 0; i < CASE_STUDY_METRICS_MAX; i++) {
+    const value = document.getElementById(`f-metric-${i}-value`).value.trim();
+    const kind = document.getElementById(`f-metric-${i}-kind`).value;
+    const labelPt = document.getElementById(`f-metric-${i}-label-pt`).value.trim();
+    const labelEn = document.getElementById(`f-metric-${i}-label-en`).value.trim();
+    if (!value && !labelPt && !labelEn) continue; // blank row, skip
+    if (!value) {
+      return setStatus(statusEl, `Métrica ${i + 1}: preencha o valor.`, "err");
+    }
+    if (!labelPt && !labelEn) {
+      return setStatus(statusEl, `Métrica ${i + 1}: preencha o rótulo em pelo menos um idioma.`, "err");
+    }
+    if (!CASE_STUDY_METRIC_KIND_VALUES.includes(kind)) {
+      return setStatus(statusEl, `Métrica ${i + 1}: tipo inválido.`, "err");
+    }
+    metrics.push({ value, kind, label: { pt: labelPt, en: labelEn } });
+  }
+  if (metrics.length) {
+    hasCaseStudy = true;
+    caseStudy.metrics = metrics;
+  }
+
   const project = {
     slug,
     title,
@@ -512,7 +548,11 @@ const SITE_SETTINGS_TEXT_KEYS = [
   "contact_subtitle",
   "footer_tagline",
 ];
-const SITE_SETTINGS_LINK_KEYS = ["github", "linkedin", "instagram"];
+const SITE_SETTINGS_LINK_KEYS = ["github", "linkedin", "instagram", "booking"];
+/* cv_en/cv_pt accept either an https:// URL or a path under /cv/ — mirrors
+   SITE_SETTINGS_CV_KEYS/isValidCvValue in scripts/lib/site-settings.mjs and
+   validate.mjs (Node modules, can't be imported here). */
+const SITE_SETTINGS_CV_KEYS = ["cv_en", "cv_pt"];
 const SITE_PHOTO_MAX_BYTES = 2 * 1024 * 1024;
 const SITE_PHOTO_ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
@@ -562,6 +602,14 @@ function isHttpsUrlAdmin(value) {
   return typeof value === "string" && /^https:\/\//i.test(value.trim());
 }
 
+function isValidCvValueAdmin(value) {
+  if (typeof value !== "string") return false;
+  const v = value.trim();
+  if (!v) return false;
+  if (isHttpsUrlAdmin(v)) return true;
+  return v.startsWith("/cv/");
+}
+
 function photoPublicUrl(path) {
   if (!path) return "";
   const base = SUPABASE_URL.replace(/\/+$/, "");
@@ -605,6 +653,9 @@ function populateSiteForm() {
 
   const links = SITE_SETTINGS.links || {};
   SITE_SETTINGS_LINK_KEYS.forEach((key) => {
+    document.getElementById(`s-link-${key}`).value = links[key] || "";
+  });
+  SITE_SETTINGS_CV_KEYS.forEach((key) => {
     document.getElementById(`s-link-${key}`).value = links[key] || "";
   });
 
@@ -927,6 +978,14 @@ async function handleSiteFormSubmit(e) {
     const value = document.getElementById(`s-link-${key}`).value.trim();
     if (value && !isHttpsUrlAdmin(value)) {
       setStatus(statusEl, `O link de ${key} precisa começar com https://.`, "err");
+      return;
+    }
+    if (value) links[key] = value;
+  }
+  for (const key of SITE_SETTINGS_CV_KEYS) {
+    const value = document.getElementById(`s-link-${key}`).value.trim();
+    if (value && !isValidCvValueAdmin(value)) {
+      setStatus(statusEl, `O currículo (${key}) precisa ser um link https:// ou um caminho em /cv/.`, "err");
       return;
     }
     if (value) links[key] = value;

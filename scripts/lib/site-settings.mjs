@@ -1,4 +1,4 @@
-import { isValidUrl } from "./validate.mjs";
+import { isValidUrl, isHttpsUrl, isValidCvValue } from "./validate.mjs";
 import { escapeHtml } from "./html.mjs";
 
 /* Only these i18n keys can ever be overridden from portfolio_site_settings —
@@ -16,6 +16,13 @@ export const SITE_SETTINGS_TEXT_KEYS = [
 ];
 
 export const SITE_SETTINGS_LINK_KEYS = ["github", "linkedin", "instagram"];
+
+/* Added for the public-site redesign's Contact section. booking must be
+   https:// (an external scheduler link); cv_en/cv_pt accept either an
+   https:// URL or a path under /cv/ (a file committed to this repo).
+   Mirrored by hand in js/admin.js (browser classic script). */
+export const SITE_SETTINGS_HTTPS_ONLY_LINK_KEYS = ["booking"];
+export const SITE_SETTINGS_CV_KEYS = ["cv_en", "cv_pt"];
 
 /* Metrics strip (home page KPIs) — mirrored by hand in js/motion.js
    (browser classic script, can't import this Node module). */
@@ -54,6 +61,18 @@ export function filterLinks(rawLinks) {
   for (const key of SITE_SETTINGS_LINK_KEYS) {
     const value = rawLinks[key];
     if (typeof value === "string" && isValidUrl(value)) {
+      result[key] = value.trim();
+    }
+  }
+  for (const key of SITE_SETTINGS_HTTPS_ONLY_LINK_KEYS) {
+    const value = rawLinks[key];
+    if (typeof value === "string" && isHttpsUrl(value)) {
+      result[key] = value.trim();
+    }
+  }
+  for (const key of SITE_SETTINGS_CV_KEYS) {
+    const value = rawLinks[key];
+    if (typeof value === "string" && isValidCvValue(value)) {
       result[key] = value.trim();
     }
   }

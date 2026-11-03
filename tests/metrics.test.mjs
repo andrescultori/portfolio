@@ -169,22 +169,16 @@ test("fetchSiteSettings falls back to code defaults (settings: null) on a 404 (c
   assert.equal(result.settings, null);
 });
 
-// --- index.html / dist: markers present, defaults intact -------------------
+// --- home page: metrics strip retired -----------------------------------
+// The redesign removes the home page's metrics (KPI) strip entirely (see
+// the PR description's "Needs André's decision" section) — index.html,
+// the PRERENDER:METRICS markers, and js/site-data.js/i18n.js/social.js
+// (client-side) no longer exist. filterMetrics/renderMetricsHtml/
+// substituteMetrics above stay tested as pure functions: the admin KPI
+// editor and its portfolio_site_settings.metrics column are intentionally
+// left in place, just no longer rendered on the public site.
 
-test("index.html wraps the 4 default metrics with the PRERENDER:METRICS markers", () => {
-  const html = readFileSync(path.join(REPO_ROOT, "index.html"), "utf8");
-  const match = html.match(/<!-- PRERENDER:METRICS:START -->([\s\S]*?)<!-- PRERENDER:METRICS:END -->/);
-  assert.ok(match, "markers not found in index.html");
-  const block = match[1];
-  ["10+", "~80%", "15+"].forEach((finalValue) => assert.ok(block.includes(finalValue)));
-  assert.equal((block.match(/class="metric"/g) || []).length, 4);
-});
-
-test("index.html loads js/site-data.js before js/i18n.js and js/social.js", () => {
-  const html = readFileSync(path.join(REPO_ROOT, "index.html"), "utf8");
-  const names = [...html.matchAll(/<script\s+src="([^"]+)"/g)].map((m) => m[1]);
-  const dataIndex = names.indexOf("js/site-data.js");
-  assert.notEqual(dataIndex, -1, "js/site-data.js not loaded");
-  assert.ok(dataIndex < names.indexOf("js/i18n.js"));
-  assert.ok(dataIndex < names.indexOf("js/social.js"));
+test("render-home.mjs never renders a metrics strip", () => {
+  const html = readFileSync(path.join(REPO_ROOT, "scripts", "lib", "render-home.mjs"), "utf8");
+  assert.ok(!html.includes("metrics-grid"), "render-home.mjs should not reference the retired metrics-grid markup");
 });

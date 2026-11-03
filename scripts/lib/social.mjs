@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 
 /* Reads js/social.js as text and extracts SOCIAL_LINKS values with a regex
-   (never eval/require it — it's a browser classic script, not a module). */
+   (never eval/require it — it's a plain config file, not a module). */
 export function loadSocialLinks(filePath) {
   const text = readFileSync(filePath, "utf8");
 
@@ -16,5 +16,8 @@ export function loadSocialLinks(filePath) {
     github: get("github") || "https://github.com/andrescultori",
     email: get("email"),
     resume: get("resume"),
+    booking: get("booking"),
+    cv_en: get("cv_en"),
+    cv_pt: get("cv_pt"),
   };
 }
