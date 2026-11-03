@@ -237,8 +237,8 @@ async function fetchRepoStack(repoUrl) {
 }
 
 /* The Client view panel's "nothing exposed by accident" summary line. */
-function clientViewSummary(tasksVisible, milestonesVisible, updatesVisible) {
-  return `${tasksVisible} tasks, ${milestonesVisible} phases, ${updatesVisible} updates visible`;
+function clientViewSummary(visible, total) {
+  return `Visible to client: ${visible.tasks}/${total.tasks} tasks, ${visible.phases}/${total.phases} phases, ${visible.updates}/${total.updates} updates`;
 }
 
 /* navigator.clipboard with a document.execCommand fallback for browsers/
@@ -576,9 +576,15 @@ function renderDetailView(p) {
 /* ---------- client view (/follow/?t=<share_token>) ---------- */
 
 function renderClientViewPanel(p) {
-  const tasksVisible = projectTasks(p.id).filter((t) => t.visible_to_client).length;
-  const milestonesVisible = projectMilestones(p.id).filter((m) => m.visible_to_client).length;
-  const updatesVisible = projectNotes(p.id).filter((n) => n.visible_to_client).length;
+  const allTasks = projectTasks(p.id);
+  const allPhases = projectMilestones(p.id);
+  const allNotes = projectNotes(p.id);
+  const visible = {
+    tasks: allTasks.filter((t) => t.visible_to_client).length,
+    phases: allPhases.filter((m) => m.visible_to_client).length,
+    updates: allNotes.filter((n) => n.visible_to_client).length,
+  };
+  const total = { tasks: allTasks.length, phases: allPhases.length, updates: allNotes.length };
 
   const enableToggle = el("input", {
     type: "checkbox",
@@ -673,7 +679,26 @@ function renderClientViewPanel(p) {
   }
 
   children.push(
-    el("p", { class: "pm-muted", text: clientViewSummary(tasksVisible, milestonesVisible, updatesVisible) })
+    el("p", { class: "pm-muted", text: clientViewSummary(visible, total) }),
+    // Hidden phases never reach the client: their tasks show ungrouped and there is no phase bar.
+    total.phases > visible.phases
+      ? el("div", { class: "pm-actions" },
+          el("p", { class: "pm-muted", text: "Hidden phases don't appear on the client page (their visible tasks are listed without grouping)." }),
+          el("button", {
+            type: "button",
+            class: "btn btn-ghost-light btn-sm",
+            text: "Show all phases to client",
+            onclick: async () => {
+              const results = await Promise.all(
+                allPhases.filter((m) => !m.visible_to_client).map((m) =>
+                  run(sb.from("pm_milestones").update({ visible_to_client: true }).eq("id", m.id).select().single()))
+              );
+              results.forEach((r) => { if (r) Object.assign(allPhases.find((m) => m.id === r.id) || {}, r); });
+              toast("Phases are now visible to the client");
+              route();
+            },
+          }))
+      : null
   );
 
   return el("section", { class: "pm-panel" }, children);
