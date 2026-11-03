@@ -37,6 +37,8 @@ var FW_STRINGS = {
     waiting_intro: "Estes itens estão esperando uma ação sua para o projeto avançar.",
     waiting_empty: "Nada aguardando você no momento.",
     roadmap_title: "Roteiro",
+    phases_complete: "{done} de {total} fases concluídas",
+    tasks_count: "{done}/{total} tarefas",
     other_tasks_title: "Outras tarefas",
     updates_title: "Atualizações",
     footer_text: "Página somente leitura. Dúvidas? ",
@@ -64,6 +66,8 @@ var FW_STRINGS = {
     waiting_intro: "These items are waiting on you before the project can move forward.",
     waiting_empty: "Nothing is waiting on you right now.",
     roadmap_title: "Roadmap",
+    phases_complete: "{done} of {total} phases complete",
+    tasks_count: "{done}/{total} tasks",
     other_tasks_title: "Other tasks",
     updates_title: "Updates",
     footer_text: "Read-only page. Questions? ",
@@ -235,6 +239,35 @@ function renderWaiting(lang, data) {
   }
 }
 
+function fillEl(pct) {
+  var node = document.createElement("span");
+  node.style.width = pct + "%";
+  return node;
+}
+
+/* Bar with one segment per visible phase and its task progress. */
+function renderPhaseBar(lang, milestones) {
+  if (!milestones.length) return null;
+  var doneCount = milestones.filter(function (m) { return m.status === "done"; }).length;
+  var segs = milestones.map(function (m, i) {
+    var tasks = m.tasks || [];
+    var done = tasks.filter(function (x) { return x.done; }).length;
+    var pct = m.status === "done" ? 100 : tasks.length ? Math.round((done / tasks.length) * 100) : 0;
+    return el("div", { class: "fw-phase-seg s-" + m.status, role: "listitem" }, [
+      el("div", { class: "fw-phase-seg-top" }, [
+        el("strong", { text: (i + 1) + ". " + m.title }),
+        el("span", { class: "fw-milestone-status" + (m.status === "active" ? " is-active" : ""), text: milestoneStatusLabel(lang, m.status) }),
+      ]),
+      el("div", { class: "fw-phase-track" }, [fillEl(pct)]),
+      tasks.length ? el("span", { class: "fw-due", text: t(lang, "tasks_count", { done: done, total: tasks.length }) }) : null,
+    ]);
+  });
+  return el("div", { class: "fw-phase-bar-wrap" }, [
+    el("p", { class: "fw-phase-summary", text: t(lang, "phases_complete", { done: doneCount, total: milestones.length }) }),
+    el("div", { class: "fw-phase-bar", role: "list" }, segs),
+  ]);
+}
+
 function renderMilestone(lang, m) {
   var statusClass = "fw-milestone-status" + (m.status === "active" ? " is-active" : "");
   var head = el("div", { class: "fw-milestone-head" }, [
@@ -261,7 +294,9 @@ function renderRoadmap(lang, data) {
   section.hidden = false;
   document.getElementById("fw-roadmap-title").textContent = t(lang, "roadmap_title");
 
+  var phaseBar = renderPhaseBar(lang, milestones);
   document.getElementById("fw-milestones").replaceChildren(
+    ...(phaseBar ? [phaseBar] : []),
     ...milestones.map(function (m) {
       return renderMilestone(lang, m);
     })

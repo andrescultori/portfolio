@@ -217,3 +217,14 @@ h3 { font-size: 15px; font-weight: 600; margin: 16px 0 8px; color: var(--fw-mute
   .fw-waiting-item, .fw-milestone, .fw-update-item { break-inside: avoid; }
   body { background: #fff; }
 }
+
+/* phase bar */
+.fw-phase-bar-wrap { margin-bottom: 16px; }
+.fw-phase-summary { margin: 0 0 8px; font-size: 14px; color: var(--fw-muted); }
+.fw-phase-bar { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(150px, 1fr); gap: 8px; overflow-x: auto; padding-bottom: 4px; }
+.fw-phase-seg { border: 1px solid var(--fw-line); border-radius: 12px; background: var(--fw-surface); padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; }
+.fw-phase-seg.s-active { border-color: var(--fw-accent); }
+.fw-phase-seg-top { display: flex; justify-content: space-between; align-items: baseline; gap: 6px; flex-wrap: wrap; font-size: 13px; }
+.fw-phase-track { height: 6px; border-radius: 999px; background: var(--fw-line); overflow: hidden; }
+.fw-phase-track span { display: block; height: 100%; background: var(--fw-accent); border-radius: 999px; }
+.fw-phase-seg.s-done .fw-phase-track span { background: #2f7d4f; }

@@ -192,3 +192,14 @@
 .pm-task-edit input[type="text"] { flex: 1 1 220px; }
 .pm-inline-form { flex-wrap: wrap; }
 .pm-inline-form input[type="text"] { min-width: 0; }
+
+/* phase tracker (project page) */
+.pm-phase-summary { margin: 0 0 6px; }
+.pm-phase-bar { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(170px, 1fr); gap: 8px; overflow-x: auto; margin-bottom: 14px; padding-bottom: 4px; }
+.pm-phase-seg { border: 1px solid var(--line, #d9d7cf); border-radius: var(--radius-sm); background: #fff; padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; }
+.pm-phase-seg.s-active { border-color: var(--accent); }
+.pm-phase-seg-top { display: flex; justify-content: space-between; align-items: baseline; gap: 6px; flex-wrap: wrap; font-size: 13px; }
+.pm-phase-seg-meta { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-muted); }
+.pm-phase-edit { flex-wrap: wrap; width: 100%; }
+.pm-phase-edit input[type="text"] { flex: 1 1 200px; }
+.pm-icon-btn:disabled { opacity: 0.3; cursor: default; }

@@ -111,6 +111,48 @@ function buildShareLink(origin, pathname, token) {
   return `${origin}${basePath}follow/?t=${token}`;
 }
 
+/* ---------- ordering helpers (pure) ---------- */
+
+/* mode "date" (default): due date, oldest first, undated last, ties by
+   manual order. mode "manual": manual order only. */
+function orderedTasks(tasks, mode) {
+  const manual = (a, b) => ((a.sort_order || 0) - (b.sort_order || 0)) || String(a.created_at).localeCompare(String(b.created_at));
+  return [...tasks].sort((a, b) => {
+    if (mode !== "manual") {
+      if (a.due_date && b.due_date && a.due_date !== b.due_date) return a.due_date < b.due_date ? -1 : 1;
+      if (a.due_date && !b.due_date) return -1;
+      if (!a.due_date && b.due_date) return 1;
+    }
+    return manual(a, b);
+  });
+}
+
+/* Moves one item up (-1) or down (+1) inside an already-ordered list and
+   returns the new order (same array contents; unchanged at the edges). */
+function moveInList(list, id, delta) {
+  const i = list.findIndex((x) => x.id === id);
+  const j = i + delta;
+  if (i < 0 || j < 0 || j >= list.length) return [...list];
+  const out = [...list];
+  [out[i], out[j]] = [out[j], out[i]];
+  return out;
+}
+
+/* Moves an item to a 0-based position. */
+function moveToPosition(list, id, position) {
+  const i = list.findIndex((x) => x.id === id);
+  if (i < 0) return [...list];
+  const out = [...list];
+  const [item] = out.splice(i, 1);
+  out.splice(Math.max(0, Math.min(position, out.length)), 0, item);
+  return out;
+}
+
+function phaseStats(tasks) {
+  const done = tasks.filter((t) => t.done).length;
+  return { done, total: tasks.length, pct: tasks.length ? Math.round((done / tasks.length) * 100) : 0 };
+}
+
 /* ---------- stack detection from a public GitHub repo ---------- */
 
 function parseGithubRepo(url) {
@@ -252,7 +294,10 @@ async function loadAll() {
 
 const clientName = (id) => state.clients.find((c) => c.id === id)?.name || "";
 const projectTasks = (id) => state.tasks.filter((t) => t.project_id === id);
-const projectMilestones = (id) => state.milestones.filter((m) => m.project_id === id);
+const projectMilestones = (id) =>
+  state.milestones
+    .filter((m) => m.project_id === id)
+    .sort((a, b) => (a.sort_order - b.sort_order) || String(a.created_at).localeCompare(String(b.created_at)));
 const projectNotes = (id) =>
   state.notes.filter((n) => n.project_id === id).sort((a, b) => Number(b.pinned) - Number(a.pinned));
 
@@ -297,6 +342,31 @@ function route() {
   // and going back to the list returns to where you were.
   if (changedView) window.scrollTo(0, project ? 0 : listScrollY);
   lastRouteKey = key;
+}
+
+async function saveOrder(table, stateKey, ordered) {
+  const changed = [];
+  ordered.forEach((row, index) => {
+    if (row.sort_order !== index) changed.push([row, index]);
+  });
+  if (!changed.length) return true;
+  const results = await Promise.all(
+    changed.map(([row, index]) => run(sb.from(table).update({ sort_order: index }).eq("id", row.id).select().single()))
+  );
+  if (results.some((r) => !r)) return false;
+  changed.forEach(([row, index], k) => { row.sort_order = index; if (results[k] && results[k].updated_at) row.updated_at = results[k].updated_at; });
+  return true;
+}
+
+async function moveTask(task, delta) {
+  const group = state.tasks.filter((t) => t.project_id === task.project_id && t.milestone_id === task.milestone_id);
+  const ordered = moveInList(orderedTasks(group, "manual"), task.id, delta);
+  if (await saveOrder("pm_tasks", "tasks", ordered)) route();
+}
+
+async function movePhase(m, delta) {
+  const ordered = moveInList(projectMilestones(m.project_id), m.id, delta);
+  if (await saveOrder("pm_milestones", "milestones", ordered)) route();
 }
 
 /* ---------- list view ---------- */
@@ -809,8 +879,17 @@ function taskEditForm(task) {
   return el("li", { class: "pm-task is-editing" }, form);
 }
 
-function taskRow(task) {
+function arrowButtons(label, onUp, onDown, upDisabled, downDisabled) {
+  return [
+    el("button", { type: "button", class: "pm-icon-btn", title: `Move ${label} up`, text: "↑", disabled: upDisabled, onclick: onUp }),
+    el("button", { type: "button", class: "pm-icon-btn", title: `Move ${label} down`, text: "↓", disabled: downDisabled, onclick: onDown }),
+  ];
+}
+
+function taskRow(task, position, groupSize) {
   if (editingTaskId === task.id) return taskEditForm(task);
+  const project = state.projects.find((x) => x.id === task.project_id);
+  const manual = project && project.task_sort === "manual";
   const checkbox = el("input", {
     type: "checkbox",
     checked: task.done,
@@ -845,6 +924,9 @@ function taskRow(task) {
       if (updated) Object.assign(task, updated);
       route();
     }),
+    ...(manual
+      ? arrowButtons("task", () => moveTask(task, -1), () => moveTask(task, 1), position === 0, position === groupSize - 1)
+      : []),
     el("button", {
       type: "button",
       class: "pm-icon-btn",
@@ -872,6 +954,11 @@ function addTaskForm(projectId, milestoneId) {
   const owner = el("select", { "aria-label": "Owner" }, options(["me", "client"], "me", { me: "Me", client: "Client" }));
   const priority = el("select", { "aria-label": "Task priority" }, options(TASK_PRIORITIES, "normal", TASK_PRIORITY_LABELS));
   const visible = el("input", { type: "checkbox" });
+  const phase = el("select", { "aria-label": "Phase" },
+    el("option", { value: "", text: "— No phase —", selected: !milestoneId }),
+    ...projectMilestones(projectId).map((m) =>
+      el("option", { value: m.id, text: m.title, selected: m.id === milestoneId, "data-no-i18n": "" }))
+  );
   // A task for the client is almost always meant to be seen by them.
   owner.addEventListener("change", () => { visible.checked = owner.value === "client"; });
   return el(
@@ -882,11 +969,12 @@ function addTaskForm(projectId, milestoneId) {
         event.preventDefault();
         const title = input.value.trim();
         if (!title) return;
-        const siblings = state.tasks.filter((t) => t.project_id === projectId && t.milestone_id === milestoneId);
+        const targetPhase = phase.value || null;
+        const siblings = state.tasks.filter((t) => t.project_id === projectId && t.milestone_id === targetPhase);
         const created = await run(
           sb.from("pm_tasks").insert({
             project_id: projectId,
-            milestone_id: milestoneId,
+            milestone_id: targetPhase,
             title,
             due_date: due.value || null,
             owner: owner.value,
@@ -902,6 +990,7 @@ function addTaskForm(projectId, milestoneId) {
     },
     input,
     due,
+    phase,
     owner,
     priority,
     el("label", { class: "pm-field pm-inline-field" }, visible, el("span", { text: "Show to client" })),
@@ -909,12 +998,87 @@ function addTaskForm(projectId, milestoneId) {
   );
 }
 
+let editingPhaseId = null;
+
+function phaseEditForm(m, total) {
+  const title = el("input", { type: "text", value: m.title, required: true, "aria-label": "Phase name" });
+  const target = el("input", { type: "date", value: m.target_date || "", "aria-label": "Target date" });
+  const description = el("input", { type: "text", value: m.description || "", placeholder: "Description (optional)", "aria-label": "Description" });
+  const status = el("select", { "aria-label": "Phase status" }, options(MILESTONE_STATUSES, m.status));
+  const current = projectMilestones(m.project_id).findIndex((x) => x.id === m.id);
+  const position = el("select", { "aria-label": "Order" },
+    Array.from({ length: total }, (_, i) => el("option", { value: String(i), text: `#${i + 1}`, selected: i === current })));
+  return el(
+    "form",
+    {
+      class: "pm-inline-form pm-phase-edit",
+      onsubmit: async (event) => {
+        event.preventDefault();
+        const name = title.value.trim();
+        if (!name) return;
+        const updated = await run(
+          sb.from("pm_milestones").update({
+            title: name,
+            target_date: target.value || null,
+            description: description.value.trim() || null,
+            status: status.value,
+          }).eq("id", m.id).select().single(),
+          "Saved"
+        );
+        if (!updated) return;
+        Object.assign(m, updated);
+        const ordered = moveToPosition(projectMilestones(m.project_id), m.id, Number(position.value));
+        if (!(await saveOrder("pm_milestones", "milestones", ordered))) return;
+        editingPhaseId = null;
+        route();
+      },
+    },
+    title, target, description, status, position,
+    el("button", { type: "submit", class: "btn btn-primary btn-sm", text: "Save" }),
+    el("button", { type: "button", class: "btn btn-ghost-light btn-sm", text: "Cancel", onclick: () => { editingPhaseId = null; route(); } })
+  );
+}
+
+/* Bar of phases with per-phase progress, shown at the top of the project. */
+function renderPhaseTracker(p) {
+  const milestones = projectMilestones(p.id);
+  if (!milestones.length) return null;
+  const tasks = projectTasks(p.id);
+  const doneCount = milestones.filter((m) => m.status === "done").length;
+  return el(
+    "div",
+    { class: "pm-phase-tracker", role: "list", "aria-label": "Phase status" },
+    el("p", { class: "pm-muted pm-phase-summary", text: `${doneCount}/${milestones.length} phases complete` }),
+    el(
+      "div",
+      { class: "pm-phase-bar" },
+      milestones.map((m, i) => {
+        const stats = phaseStats(tasks.filter((t) => t.milestone_id === m.id));
+        const pct = m.status === "done" ? 100 : stats.pct;
+        return el(
+          "div",
+          { class: `pm-phase-seg s-${m.status}`, role: "listitem" },
+          el("div", { class: "pm-phase-seg-top" },
+            el("strong", { text: `${i + 1}. ${m.title}`, "data-no-i18n": "" }),
+            el("span", { class: `pm-badge s-${m.status}`, text: m.status })),
+          el("div", { class: "pm-progress", title: `${stats.done}/${stats.total} tasks` },
+            el("span", { style: `width:${pct}%` })),
+          el("div", { class: "pm-phase-seg-meta" },
+            el("span", { text: stats.total ? `${stats.done}/${stats.total} tasks` : "No tasks yet" }),
+            m.target_date ? el("span", { class: isOverdue(m.target_date) && m.status !== "done" ? "is-overdue" : "", text: formatDate(m.target_date) }) : null)
+        );
+      })
+    )
+  );
+}
+
 function renderRoadmapPanel(p) {
   const milestones = projectMilestones(p.id);
   const tasks = projectTasks(p.id);
 
-  const milestoneBlocks = milestones.map((m) => {
-    const mTasks = tasks.filter((t) => t.milestone_id === m.id);
+  const milestoneBlocks = milestones.map((m, phaseIndex) => {
+    if (editingPhaseId === m.id) return el("div", { class: "pm-milestone s-" + m.status }, phaseEditForm(m, milestones.length));
+    const mTasks = orderedTasks(tasks.filter((t) => t.milestone_id === m.id), p.task_sort);
     const statusSelect = el("select", {
       class: `pm-badge-select s-${m.status}`,
       "aria-label": "Phase status",
@@ -960,6 +1124,8 @@ function renderRoadmapPanel(p) {
           if (updated) Object.assign(m, updated);
           route();
         }),
+        ...arrowButtons("phase", () => movePhase(m, -1), () => movePhase(m, 1), phaseIndex === 0, phaseIndex === milestones.length - 1),
+        el("button", { type: "button", class: "pm-icon-btn", title: "Edit phase", text: "✎", onclick: () => { editingPhaseId = m.id; route(); } }),
         el("button", {
           type: "button",
           class: "pm-icon-btn",
@@ -975,17 +1141,17 @@ function renderRoadmapPanel(p) {
         })
       ),
       m.description ? el("p", { class: "pm-muted pm-milestone-desc", text: m.description }) : null,
-      el("ul", { class: "pm-tasks" }, mTasks.map(taskRow)),
+      el("ul", { class: "pm-tasks" }, mTasks.map((t, i) => taskRow(t, i, mTasks.length))),
       addTaskForm(p.id, m.id)
     );
   });
 
-  const loose = tasks.filter((t) => !t.milestone_id);
+  const loose = orderedTasks(tasks.filter((t) => !t.milestone_id), p.task_sort);
   const looseBlock = el(
     "div",
     { class: "pm-milestone is-loose" },
     el("div", { class: "pm-milestone-head" }, el("h3", { text: milestones.length ? "Other tasks" : "Checklist" })),
-    el("ul", { class: "pm-tasks" }, loose.map(taskRow)),
+    el("ul", { class: "pm-tasks" }, loose.map((t, i) => taskRow(t, i, loose.length))),
     addTaskForm(p.id, null)
   );
 
@@ -1016,13 +1182,33 @@ function renderRoadmapPanel(p) {
     el("button", { type: "submit", class: "btn btn-ghost-light btn-sm", text: "Add phase" })
   );
 
-  return el("section", { class: "pm-panel" }, el("h2", { text: "Phases & checklist" }), milestoneBlocks, looseBlock, addMilestone);
+  const sortSelect = el("select", {
+    "aria-label": "Task order",
+    onchange: async (event) => {
+      const updated = await run(sb.from("pm_projects").update({ task_sort: event.target.value }).eq("id", p.id).select().single());
+      if (updated) Object.assign(p, updated);
+      route();
+    },
+  }, options(["date", "manual"], p.task_sort || "date", { date: "Task order: by due date", manual: "Task order: manual (↑ ↓)" }));
+
+  return el(
+    "section",
+    { class: "pm-panel" },
+    el("div", { class: "pm-toolbar" }, el("h2", { text: "Phases & checklist" }), sortSelect),
+    renderPhaseTracker(p),
+    milestoneBlocks,
+    looseBlock,
+    addMilestone
+  );
 }
 
 function renderNotesPanel(p) {
   const notes = projectNotes(p.id);
   const body = el("textarea", { rows: 2, placeholder: "Key info, a decision, or a log entry…", required: true });
   const kind = el("select", { "aria-label": "Note type" }, options(NOTE_KINDS, "log", NOTE_KIND_LABELS));
+  const showToClient = el("input", { type: "checkbox" });
+  // Notes written to the client ("Client update") are meant to be seen by them.
+  kind.addEventListener("change", () => { showToClient.checked = kind.value === "update"; });
 
   const list = el(
     "ul",
@@ -1083,7 +1269,7 @@ function renderNotesPanel(p) {
         event.preventDefault();
         if (!body.value.trim()) return;
         const created = await run(
-          sb.from("pm_notes").insert({ project_id: p.id, kind: kind.value, body: body.value.trim() }).select().single()
+          sb.from("pm_notes").insert({ project_id: p.id, kind: kind.value, body: body.value.trim(), visible_to_client: showToClient.checked }).select().single()
         );
         if (!created) return;
         state.notes.unshift(created);
@@ -1092,6 +1278,7 @@ function renderNotesPanel(p) {
     },
     body,
     kind,
+    el("label", { class: "pm-field pm-inline-field" }, showToClient, el("span", { text: "Show to client" })),
     el("button", { type: "submit", class: "btn btn-ghost-light btn-sm", text: "Add note" })
   );
 

@@ -132,3 +132,30 @@ test("buildShareLink handles the clean URL /pm that Cloudflare Pages serves", ()
   }
   assert.equal(sandbox.buildShareLink("https://x.pages.dev", "/preview/pm", "tok"), "https://x.pages.dev/preview/follow/?t=tok");
 });
+
+test("orderedTasks: date mode puts oldest due date first and undated last; manual mode uses sort_order", () => {
+  const tasks = [
+    { id: "a", due_date: null, sort_order: 0, created_at: "1" },
+    { id: "b", due_date: "2026-12-10", sort_order: 1, created_at: "2" },
+    { id: "c", due_date: "2026-11-05", sort_order: 2, created_at: "3" },
+    { id: "d", due_date: "2026-11-05", sort_order: 1, created_at: "4" },
+  ];
+  assert.deepEqual(Array.from(sandbox.orderedTasks(tasks, "date")).map((t) => t.id), ["d", "c", "b", "a"]);
+  assert.deepEqual(Array.from(sandbox.orderedTasks(tasks, "manual")).map((t) => t.id), ["a", "b", "d", "c"]);
+});
+
+test("moveInList swaps with the neighbour and stops at the edges; moveToPosition inserts at an index", () => {
+  const list = [{ id: "a" }, { id: "b" }, { id: "c" }];
+  const ids = (l) => Array.from(l).map((x) => x.id).join("");
+  assert.equal(ids(sandbox.moveInList(list, "b", -1)), "bac");
+  assert.equal(ids(sandbox.moveInList(list, "b", 1)), "acb");
+  assert.equal(ids(sandbox.moveInList(list, "a", -1)), "abc");
+  assert.equal(ids(sandbox.moveInList(list, "c", 1)), "abc");
+  assert.equal(ids(sandbox.moveToPosition(list, "c", 0)), "cab");
+  assert.equal(ids(sandbox.moveToPosition(list, "a", 2)), "bca");
+});
+
+test("phaseStats counts done tasks and rounds the percentage", () => {
+  assert.deepEqual({ ...sandbox.phaseStats([{ done: true }, { done: false }, { done: false }]) }, { done: 1, total: 3, pct: 33 });
+  assert.deepEqual({ ...sandbox.phaseStats([]) }, { done: 0, total: 0, pct: 0 });
+});
