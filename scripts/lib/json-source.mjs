@@ -18,6 +18,9 @@ export function mapJsonProject(entry) {
     featured: !!entry.featured,
     sortOrder: entry.sortOrder || 0,
     draft: !!entry.draft,
+    category: entry.category || "apps",
+    caseStudy: entry.caseStudy || null,
+    powerbiUrl: entry.powerbiUrl || "",
   };
 }
 

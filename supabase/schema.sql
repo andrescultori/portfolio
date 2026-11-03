@@ -35,11 +35,26 @@ create table public.portfolio_projects (
   sort_order integer not null default 0,
   draft boolean not null default false,
   created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
+  updated_at timestamptz not null default now(),
+  category text not null default 'apps'
+    check (category in ('data-bi', 'automation', 'apps')),
+  case_study jsonb
+    check (case_study is null or jsonb_typeof(case_study) = 'object'),
+  powerbi_url text
+    check (powerbi_url is null or powerbi_url ~ '^https://app\.powerbi\.com(/|$)')
 );
 
 comment on table public.portfolio_projects is
   'Project entries shown on andrescultori.github.io/portfolio, editable via the admin panel.';
+
+comment on column public.portfolio_projects.category is
+  'Project category for the home page filter and the card/page badge: data-bi, automation, or apps. Defaults to apps. Added by supabase/migrations/20261103132315_portfolio_category_case_study.sql.';
+
+comment on column public.portfolio_projects.case_study is
+  'Optional case-study content: {problem, data, approach, insights, impact}, each shaped {pt, en}. Null/absent means no case study — the project page section is skipped entirely.';
+
+comment on column public.portfolio_projects.powerbi_url is
+  'Optional Power BI report embed URL, rendered as a lazy-loaded iframe on the project page when set. Must be https:// on app.powerbi.com exactly. Null means no embed.';
 
 -- ---------------------------------------------------------------------------
 -- Row Level Security

@@ -17,6 +17,9 @@ export function mapSupabaseRow(row) {
     featured: !!row.featured,
     sortOrder: row.sort_order || 0,
     draft: !!row.draft,
+    category: row.category || "apps",
+    caseStudy: row.case_study || null,
+    powerbiUrl: row.powerbi_url || "",
   };
 }
 

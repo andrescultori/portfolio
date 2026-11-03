@@ -81,11 +81,35 @@ function dashboardFinanceiroFigureHtml() {
   </figure>`;
 }
 
+/* Mirrors js/main.js's categoryLabel() and the 3 I18N keys it reads from
+   (category_data_bi/automation/apps) — kept in sync by hand, same pattern
+   as every other cross-file mirror in this codebase. */
+function categoryLabel(category) {
+  const key = { "data-bi": "category_data_bi", automation: "category_automation", apps: "category_apps" }[category];
+  return t(key || "category_apps");
+}
+
+/* Mirrors CASE_STUDY_FIELDS in scripts/lib/render-project-page.mjs (Node
+   module, can't be imported here) — same 5 keys, same order. Labels come
+   from js/i18n.js instead of being hardcoded PT, since this renders live
+   with the language toggle (unlike the prerendered static page, which is
+   PT-fixed plus a separate English-version block). */
+const CASE_STUDY_FIELDS = ["problem", "data", "approach", "insights", "impact"];
+
 function renderProject(project) {
   const lang = getLang();
   const desc = project.description[lang] || project.description.pt || "";
 
   document.title = `${project.title} — André Scultori`;
+
+  const categoryBadgeHost = document.getElementById("project-category-badge");
+  if (categoryBadgeHost) {
+    categoryBadgeHost.innerHTML = "";
+    const badge = document.createElement("span");
+    badge.className = `badge-category badge-category--${project.category || "apps"}`;
+    badge.textContent = categoryLabel(project.category);
+    categoryBadgeHost.appendChild(badge);
+  }
 
   document.getElementById("project-title").textContent = project.title;
 
@@ -150,6 +174,43 @@ function renderProject(project) {
     });
   } else {
     shotSection.style.display = "none";
+  }
+
+  const powerbiEmbed = document.getElementById("powerbi-embed");
+  const powerbiIframe = document.getElementById("powerbi-iframe");
+  if (powerbiEmbed && powerbiIframe) {
+    if (project.powerbiUrl) {
+      powerbiIframe.src = project.powerbiUrl;
+      powerbiIframe.title = `${project.title} — Power BI`;
+      powerbiEmbed.style.display = "block";
+    } else {
+      powerbiIframe.src = "";
+      powerbiEmbed.style.display = "none";
+    }
+  }
+
+  const caseStudySection = document.getElementById("case-study");
+  const caseStudyBlocks = document.getElementById("case-study-blocks");
+  if (caseStudySection && caseStudyBlocks) {
+    caseStudyBlocks.innerHTML = "";
+    let hasAnyBlock = false;
+    CASE_STUDY_FIELDS.forEach((key) => {
+      const field = project.caseStudy && project.caseStudy[key];
+      const value = field && (field[lang] || field.pt);
+      if (!value || !value.trim()) return;
+      hasAnyBlock = true;
+      const block = document.createElement("div");
+      block.className = "case-study-block";
+      const heading = document.createElement("h4");
+      heading.textContent = t(`case_study_${key}`);
+      const p = document.createElement("p");
+      p.className = "prose";
+      p.textContent = value;
+      block.appendChild(heading);
+      block.appendChild(p);
+      caseStudyBlocks.appendChild(block);
+    });
+    caseStudySection.style.display = hasAnyBlock ? "block" : "none";
   }
 
   document.getElementById("side-stack").innerHTML = project.stack
