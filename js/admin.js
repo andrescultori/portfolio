@@ -125,6 +125,28 @@ function isValidPowerBiUrl(value) {
   }
 }
 
+/* pm.html shares this login: it sends signed-out visitors to
+   admin.html?next=pm. The target survives the GitHub OAuth round-trip
+   (redirectTo drops the query string) via sessionStorage, and only the
+   whitelisted value "pm" is honored, so it can't become an open redirect. */
+const NEXT_KEY = "admin_next";
+
+function rememberNextTarget() {
+  const next = new URLSearchParams(window.location.search).get("next");
+  if (next !== "pm") return;
+  try { sessionStorage.setItem(NEXT_KEY, next); } catch (_) { /* storage blocked */ }
+}
+
+function consumeNextTarget() {
+  try {
+    const next = sessionStorage.getItem(NEXT_KEY);
+    sessionStorage.removeItem(NEXT_KEY);
+    return next === "pm" ? "pm" : null;
+  } catch (_) {
+    return null;
+  }
+}
+
 async function checkAuthAndRoute() {
   try {
     const { data: { session } } = await supabaseClient.auth.getSession();
@@ -140,8 +162,16 @@ async function checkAuthAndRoute() {
       return;
     }
     AUTHORIZED_USER_ID = session.user.id;
+    if (consumeNextTarget() === "pm") {
+      window.location.replace("pm.html");
+      return;
+    }
     showAuthState("authorized");
     await loadProjects();
+    if (window.location.hash === "#site") {
+      showSiteTab();
+      loadSiteSettings();
+    }
   } catch (err) {
     AUTHORIZED_USER_ID = null;
     showAuthState("login");
@@ -1005,6 +1035,7 @@ async function init() {
     }
 
     supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+    rememberNextTarget();
     bindEvents();
     supabaseClient.auth.onAuthStateChange((event, session) => {
       handleAuthStateChange(event, session);

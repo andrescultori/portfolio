@@ -675,7 +675,10 @@ function renderDangerPanel(p) {
   );
 }
 
-/* ---------- auth (same GitHub allowlist as admin.html) ---------- */
+/* ---------- auth ----------
+   Login happens only in admin.html (same origin → same Supabase session in
+   localStorage). Signed-out visitors get a link to admin.html?next=pm,
+   which sends them back here after the GitHub round-trip. */
 
 function showAuthState(which) {
   document.getElementById("pm-login").hidden = which !== "login";
@@ -709,19 +712,6 @@ function shouldReroute(event, userId) {
   return !(userId && userId === authorizedUserId);
 }
 
-async function login() {
-  const status = document.getElementById("login-status");
-  status.textContent = "Redirecting to GitHub…";
-  const { error } = await sb.auth.signInWithOAuth({
-    provider: "github",
-    options: { redirectTo: window.location.origin + window.location.pathname },
-  });
-  if (error) {
-    status.textContent = `Login error: ${error.message}`;
-    status.className = "form-status err";
-  }
-}
-
 async function init() {
   if (!window.supabase || typeof window.supabase.createClient !== "function") {
     showAuthState("login");
@@ -730,7 +720,6 @@ async function init() {
   }
   sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
 
-  document.getElementById("btn-login-github").addEventListener("click", login);
   document.getElementById("btn-logout").addEventListener("click", () => sb.auth.signOut());
   document.getElementById("btn-logout-forbidden").addEventListener("click", () => sb.auth.signOut());
   document.getElementById("btn-new-project").addEventListener("click", openNewForm);

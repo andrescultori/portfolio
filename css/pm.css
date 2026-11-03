@@ -155,3 +155,5 @@
 }
 .pm-links-edit summary { cursor: pointer; font: 600 14px var(--font-body); }
 .pm-links-edit[open] summary { margin-bottom: 12px; }
+.pm-tabs { margin-bottom: 20px; }
+.pm-tabs span.btn { cursor: default; }
