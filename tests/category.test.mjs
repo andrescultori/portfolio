@@ -154,29 +154,29 @@ test("renderCardHtml defaults to the 'apps' badge when category is missing", () 
 
 const SOCIAL = { github: "https://github.com/andrescultori" };
 
-function renderPage(overrides) {
+function renderPage(overrides, lang = "en") {
   return renderProjectPage({
+    lang,
     project: baseProject(overrides),
     siteUrl: "https://example.com",
-    pageUrl: "https://example.com/projeto.html?slug=demo",
     social: SOCIAL,
   }).html;
 }
 
-test("renderProjectPage omits the case-study section entirely when caseStudy is null", () => {
+test("renderProjectPage uses the fallback layout (not case-study) when caseStudy is null", () => {
   const html = renderPage({ caseStudy: null });
-  assert.doesNotMatch(html, /class="case-study"/);
-  assert.doesNotMatch(html, /Case study/);
+  assert.doesNotMatch(html, /class="cs-header"/);
+  assert.doesNotMatch(html, /class="cs-section"/);
 });
 
-test("renderProjectPage omits the case-study section when caseStudy has only empty blocks", () => {
+test("renderProjectPage uses the fallback layout when caseStudy has only empty blocks", () => {
   const html = renderPage({
     caseStudy: { problem: { pt: "", en: "" }, data: { pt: "  ", en: "" } },
   });
-  assert.doesNotMatch(html, /class="case-study"/);
+  assert.doesNotMatch(html, /class="cs-header"/);
 });
 
-test("renderProjectPage renders only the non-empty case-study blocks, each with its PT label", () => {
+test("renderProjectPage renders only the non-empty case-study sections", () => {
   const html = renderPage({
     caseStudy: {
       problem: { pt: "Problema real", en: "Real problem" },
@@ -184,37 +184,48 @@ test("renderProjectPage renders only the non-empty case-study blocks, each with 
       impact: { pt: "Impacto real", en: "" },
     },
   });
-  assert.match(html, /class="case-study"/);
-  assert.match(html, /Problema<\/h4><p class="prose">Problema real/);
-  assert.match(html, /Impacto<\/h4><p class="prose">Impacto real/);
-  // "Dados" (the "data" field) block must not render — both pt and en are empty.
-  assert.doesNotMatch(html, /<h4>Dados<\/h4>/);
+  assert.match(html, /class="cs-header"/);
+  assert.match(html, /Context and problem<\/h2>[\s\S]*?<p>Real problem<\/p>/);
+  assert.match(html, /Results<\/h2>[\s\S]*?<p lang="pt-BR">Impacto real<\/p>/);
+  // Approach/insights sections must not render — both languages are empty.
+  assert.doesNotMatch(html, /Approach<\/h2>/);
+  assert.doesNotMatch(html, /What the data showed<\/h2>/);
 });
 
-test("renderProjectPage's English block includes only the EN case-study blocks that have content", () => {
+test("renderProjectPage falls back to PT text (with lang attr) for a case-study section missing EN", () => {
   const html = renderPage({
-    caseStudy: { problem: { pt: "Problema", en: "The problem" } },
+    caseStudy: { approach: { pt: "Abordagem em PT", en: "" } },
   });
-  assert.match(html, /<h4>Problem<\/h4><p class="prose">The problem/);
+  assert.match(html, /Approach<\/h2>[\s\S]*?<p lang="pt-BR">Abordagem em PT<\/p>/);
 });
 
-test("renderProjectPage omits the Power BI embed when powerbiUrl is empty", () => {
-  const html = renderPage({ powerbiUrl: "" });
-  assert.doesNotMatch(html, /powerbi-embed/);
+test("renderProjectPage omits the Power BI embed when powerbiUrl is empty, showing the cover image instead", () => {
+  const html = renderPage({
+    powerbiUrl: "",
+    cardImage: "img/cover.jpg",
+    caseStudy: { problem: { pt: "x", en: "x" } },
+  });
+  assert.doesNotMatch(html, /cs-visual-embed/);
   assert.doesNotMatch(html, /<iframe/);
+  assert.match(html, /cs-visual-frame/);
 });
 
 test("renderProjectPage renders a lazy-loaded, referrer-stripped Power BI iframe when powerbiUrl is set", () => {
-  const html = renderPage({ powerbiUrl: "https://app.powerbi.com/view?r=abc" });
-  assert.match(html, /class="powerbi-embed"/);
+  const html = renderPage({
+    powerbiUrl: "https://app.powerbi.com/view?r=abc",
+    caseStudy: { problem: { pt: "x", en: "x" } },
+  });
+  assert.match(html, /class="cs-visual-embed"/);
   assert.match(html, /<iframe src="https:\/\/app\.powerbi\.com\/view\?r=abc"[^>]*loading="lazy"/);
   assert.match(html, /referrerpolicy="no-referrer"/);
   assert.match(html, /title="Demo — Power BI"/);
 });
 
-test("renderProjectPage shows the category badge near the title", () => {
-  const html = renderPage({ category: "automation" });
-  assert.match(html, /id="project-category-badge">[^<]*<span class="badge-category badge-category--automation"/);
+test("renderProjectPage shows the category eyebrow near the title on both layouts", () => {
+  const csHtml = renderPage({ category: "automation", caseStudy: { problem: { pt: "x", en: "x" } } });
+  assert.match(csHtml, /Case study · Automation/);
+  const fallbackHtml = renderPage({ category: "automation", caseStudy: null });
+  assert.match(fallbackHtml, /<p class="eyebrow">Automation<\/p>/);
 });
 
 // --- js/admin.js whitelist/validation logic (vm sandbox, same pattern as

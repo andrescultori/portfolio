@@ -1,0 +1,38 @@
+[
+  {
+    "id": "diagnose",
+    "number": "01",
+    "title": { "pt": "Diagnóstico", "en": "Diagnose" },
+    "description": {
+      "pt": "Mapeamos como o trabalho e os dados fluem hoje e alinhamos qual decisão os números precisam sustentar.",
+      "en": "We map how the work and the data flow today, and agree on the decision the numbers must support."
+    }
+  },
+  {
+    "id": "prototype",
+    "number": "02",
+    "title": { "pt": "Protótipo", "en": "Prototype" },
+    "description": {
+      "pt": "Uma primeira versão funcional sobre a sua estrutura real, para você reagir a algo concreto desde cedo.",
+      "en": "A first working version on your real structure, so you react to something concrete early."
+    }
+  },
+  {
+    "id": "build",
+    "number": "03",
+    "title": { "pt": "Construção", "en": "Build" },
+    "description": {
+      "pt": "Versão de produção com dados testados, lógica documentada e alertas quando algo quebra.",
+      "en": "Production version with tested data, documented logic and alerts when something breaks."
+    }
+  },
+  {
+    "id": "handover",
+    "number": "04",
+    "title": { "pt": "Entrega", "en": "Hand over" },
+    "description": {
+      "pt": "Treinamento e documentação por escrito, para que o seu time seja dono do processo e não dependa de mim.",
+      "en": "Training and written documentation, so your team owns it and does not depend on me."
+    }
+  }
+]
