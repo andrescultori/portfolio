@@ -67,6 +67,17 @@ window.I18N_PAGE = {
     "Priority": "Prioridade", "1 — highest": "1 — mais alta", "5 — lowest": "5 — mais baixa",
     "Start": "Início", "Due": "Prazo", "Summary": "Resumo",
     "Stack (comma-separated)": "Stack (separada por vírgula)",
+    "Edit task": "Editar tarefa", "Task title": "Título da tarefa", "Task priority": "Prioridade da tarefa",
+    "Owner": "Responsável", "Phase": "Fase", "— No phase —": "— Sem fase —", "Show to client": "Mostrar ao cliente",
+    "Normal": "Normal", "High": "Alta", "Urgent": "Urgente",
+    "Phase status": "Status da fase", "Mark phase complete": "Marcar fase como concluída", "Phase marked complete": "Fase marcada como concluída",
+    "Delete phase (tasks are kept, ungrouped)": "Excluir fase (as tarefas são mantidas, sem agrupamento)",
+    "New phase (e.g. Phase 1)…": "Nova fase (ex.: Fase 1)…", "Add phase": "Adicionar fase", "Phases & checklist": "Fases e checklist",
+    "Detect from repo": "Detectar pelo repositório",
+    "Stack is already up to date": "A stack já está atualizada",
+    "Add a GitHub repo link first (Edit links → repo).": "Adicione antes o link do repositório GitHub (Editar links → repositório).",
+    "GitHub rate limit reached — try again in a few minutes.": "Limite do GitHub atingido — tente novamente em alguns minutos.",
+    "Repo not found or private. Only public repos can be read.": "Repositório não encontrado ou privado. Só repositórios públicos podem ser lidos.",
     "Edit links": "Editar links", "Save": "Salvar",
     "repo": "repositório", "live": "ao vivo", "admin": "admin", "claude project": "projeto Claude",
     "supabase": "supabase", "docs": "docs", "drive": "drive",
@@ -78,11 +89,11 @@ window.I18N_PAGE = {
     "Hidden from client — click to show": "Oculto do cliente — clique para exibir",
     "Me": "Eu",
     "Delete task": "Excluir tarefa", "Add a task…": "Adicionar tarefa…", "Due date": "Data limite", "Add": "Adicionar",
-    "Milestone status": "Status do marco",
-    "Delete milestone (tasks are kept, ungrouped)": "Excluir marco (as tarefas são mantidas, sem agrupamento)",
+    
+    
     "Other tasks": "Outras tarefas", "Checklist": "Checklist",
-    "New milestone…": "Novo marco…", "Target date": "Data alvo", "Add milestone": "Adicionar marco",
-    "Roadmap & checklist": "Roadmap e checklist",
+    "Target date": "Data alvo", 
+    
     "Key info, a decision, or a log entry…": "Informação, decisão ou registro…",
     "Note type": "Tipo de nota", "Unpin": "Desafixar", "Pin": "Fixar",
     "Delete note": "Excluir nota", "Delete this note?": "Excluir esta nota?",
@@ -91,7 +102,9 @@ window.I18N_PAGE = {
     "Could not load Supabase. Check your connection and reload.": "Não foi possível carregar o Supabase. Verifique a conexão e recarregue."
   },
   patterns: [
-    ["^(\\d+) tasks, (\\d+) milestones, (\\d+) updates visible$", "$1 tarefas, $2 marcos, $3 atualizações visíveis"],
+    ["^(\\d+) tasks, (\\d+) phases, (\\d+) updates visible$", "$1 tarefas, $2 fases, $3 atualizações visíveis"],
+    ["^Detected (\\d+) new item\\(s\\) — review and press Save$", "$1 item(ns) novo(s) detectado(s) — revise e clique em Salvar"],
+    ["^GitHub returned (\\d+)\\.$", "O GitHub retornou $1."],
     ["^Could not load data: (.*)$", "Não foi possível carregar os dados: $1"],
     ["^Next: (.*)$", "Próximo: $1"],
     ["^(\\d+)/(\\d+) tasks$", "$1/$2 tarefas"],
@@ -106,7 +119,7 @@ window.I18N_PAGE = {
     ["^Owner: Me — click to toggle$", "Responsável: Eu — clique para alternar"],
     ["^Client$", "Cliente"],
     ["^Done: (.*)$", "Concluída: $1"],
-    ["^Delete milestone \"(.*)\"\\? Its tasks are kept\\.$", "Excluir o marco \"$1\"? As tarefas são mantidas."],
-    ["^Delete \"(.*)\" with all its milestones, tasks and notes\\? This cannot be undone\\.$", "Excluir \"$1\" com todos os marcos, tarefas e notas? Esta ação não pode ser desfeita."]
+    ["^Delete phase \"(.*)\"\\? Its tasks are kept\\.$", "Excluir a fase \"$1\"? As tarefas são mantidas."],
+    ["^Delete \"(.*)\" with all its phases, tasks and notes\\? This cannot be undone\\.$", "Excluir \"$1\" com todas as fases, tarefas e notas? Esta ação não pode ser desfeita."]
   ]
 };
