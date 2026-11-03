@@ -1294,7 +1294,7 @@ p {
 
 /* ==========================================================================
    Motion layer (js/motion.js) — reveal, typewriter, counters, figures,
-   card spotlight, hero parallax, marquee, progress bar, header shrink,
+   card spotlight, hero parallax, progress bar, header shrink,
    skeleton loading. Toggle any effect via MOTION_CONFIG in js/motion.js.
    `.js` is added by a tiny inline <head> script; without it (no JS) or once
    `.reveal-fallback` kicks in (1.5s safety net), everything stays visible.
@@ -1363,47 +1363,6 @@ p {
   margin-top: 4px;
   font-size: 13px;
   color: var(--text-muted);
-}
-
-/* ---- Tools marquee (decorative; content built by js/main.js) ---- */
-
-.tools-marquee {
-  overflow: hidden;
-  border-bottom: 1px solid var(--line);
-  padding: 14px 0;
-  background: var(--paper);
-}
-
-.tools-marquee-track {
-  display: flex;
-  width: max-content;
-}
-
-.marquee-set {
-  display: flex;
-  flex-shrink: 0;
-}
-
-.marquee-item {
-  padding: 0 20px;
-  font-size: 12.5px;
-  font-weight: 600;
-  color: var(--text-muted);
-  white-space: nowrap;
-}
-
-html.motion-tools-marquee .tools-marquee-track {
-  animation: motion-marquee-scroll 32s linear infinite;
-}
-
-.tools-marquee:hover .tools-marquee-track,
-.tools-marquee:focus-within .tools-marquee-track {
-  animation-play-state: paused;
-}
-
-@keyframes motion-marquee-scroll {
-  from { transform: translateX(0); }
-  to { transform: translateX(-50%); }
 }
 
 /* ---- Reading progress bar ---- */
@@ -1549,8 +1508,8 @@ html.motion-tools-marquee .tools-marquee-track {
   .metrics-grid { grid-template-columns: repeat(2, 1fr); gap: 20px 16px; }
 }
 
-/* ---- Reduced motion: no typewriter, rotation, counting, marquee scroll,
-   parallax, pulse, or scroll-triggered reveal — content shows directly. */
+/* ---- Reduced motion: no typewriter, rotation, counting, parallax, pulse,
+   or scroll-triggered reveal — content shows directly. */
 @media (prefers-reduced-motion: reduce) {
   .js [data-reveal] {
     opacity: 1 !important;
@@ -1558,11 +1517,6 @@ html.motion-tools-marquee .tools-marquee-track {
     transition: none !important;
   }
   .motion-caret { display: none !important; }
-  html.motion-tools-marquee .tools-marquee-track {
-    animation: none !important;
-    flex-wrap: wrap;
-    width: 100%;
-  }
   .hero::after { animation: none !important; transform: none !important; }
   .figure-pulse-path, .figure-bar { animation: none !important; }
   .figure-bar { transform: scaleY(1) !important; transition: none !important; }
