@@ -92,3 +92,18 @@ test("clientViewSummary reports N tasks, M milestones, K updates visible", () =>
 // `options(CLIENT_LANGS, p.client_lang, CLIENT_LANG_LABELS)` call sites,
 // which only matter once rendered — out of scope for this pure-function
 // test file.
+
+test("buildShareLink handles the clean URL /pm that Cloudflare Pages serves", () => {
+  assert.equal(
+    sandbox.buildShareLink("https://andrescultori.pages.dev", "/pm", "tok"),
+    "https://andrescultori.pages.dev/follow/?t=tok"
+  );
+  assert.equal(
+    sandbox.buildShareLink("https://andrescultori.pages.dev", "/pm/", "tok"),
+    "https://andrescultori.pages.dev/follow/?t=tok"
+  );
+  assert.equal(
+    sandbox.buildShareLink("https://x.pages.dev", "/preview/pm", "tok"),
+    "https://x.pages.dev/preview/follow/?t=tok"
+  );
+});

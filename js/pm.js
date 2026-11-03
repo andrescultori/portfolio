@@ -104,7 +104,8 @@ function isOverdue(iso) {
    origin/pathname as plain strings so it's testable without a real
    window. */
 function buildShareLink(origin, pathname, token) {
-  const basePath = pathname.replace(/pm\.html$/, "");
+  // Cloudflare Pages serves pm.html at the clean URL /pm, so accept both.
+  const basePath = pathname.replace(/pm(\.html)?\/?$/, "");
   return `${origin}${basePath}follow/?t=${token}`;
 }
 
