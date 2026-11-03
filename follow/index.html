@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="pt-BR" id="follow-html">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Project tracking | André Scultori</title>
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="referrer" content="no-referrer">
+  <link rel="icon" href="/img/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+  <link rel="stylesheet" href="/css/follow.css">
+</head>
+<body>
+
+  <header class="fw-header">
+    <div class="fw-wrap">
+      <span class="fw-wordmark">André Scultori</span>
+      <span class="fw-kicker" id="fw-kicker">Project tracking</span>
+    </div>
+  </header>
+
+  <main class="fw-wrap" id="fw-main">
+
+    <div id="fw-loading" class="fw-skeleton" aria-hidden="true">
+      <div class="fw-skel-line fw-skel-h1"></div>
+      <div class="fw-skel-line fw-skel-badge"></div>
+      <div class="fw-skel-line"></div>
+      <div class="fw-skel-line fw-skel-short"></div>
+    </div>
+
+    <div id="fw-error" class="fw-card fw-error" hidden>
+      <p id="fw-error-message"></p>
+      <button type="button" class="fw-btn" id="fw-retry" hidden>Retry</button>
+    </div>
+
+    <div id="fw-content" hidden>
+      <h1 id="fw-project-name"></h1>
+      <div class="fw-meta-row">
+        <span class="fw-badge" id="fw-status"></span>
+        <span class="fw-updated" id="fw-updated"></span>
+      </div>
+      <p class="fw-summary" id="fw-summary" hidden></p>
+
+      <div class="fw-progress-block" id="fw-progress-block" hidden>
+        <div class="fw-progress-track">
+          <div class="fw-progress-fill" id="fw-progress-fill" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div>
+        </div>
+        <p class="fw-progress-label" id="fw-progress-label"></p>
+      </div>
+
+      <section class="fw-section" id="fw-waiting-section" hidden aria-labelledby="fw-waiting-title">
+        <h2 id="fw-waiting-title"></h2>
+        <p class="fw-waiting-intro" id="fw-waiting-intro" hidden></p>
+        <p class="fw-waiting-empty" id="fw-waiting-empty" hidden></p>
+        <ul class="fw-waiting-list" id="fw-waiting-list"></ul>
+      </section>
+
+      <section class="fw-section" id="fw-roadmap-section" hidden aria-labelledby="fw-roadmap-title">
+        <h2 id="fw-roadmap-title"></h2>
+        <div id="fw-milestones"></div>
+        <div id="fw-other-tasks-block" hidden>
+          <h3 id="fw-other-tasks-title"></h3>
+          <ul class="fw-task-list" id="fw-other-tasks"></ul>
+        </div>
+      </section>
+
+      <section class="fw-section" id="fw-updates-section" hidden aria-labelledby="fw-updates-title">
+        <h2 id="fw-updates-title"></h2>
+        <ul class="fw-updates-list" id="fw-updates-list"></ul>
+      </section>
+    </div>
+
+  </main>
+
+  <footer class="fw-footer">
+    <div class="fw-wrap">
+      <p id="fw-footer-text"></p>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="/js/supabase-config.js"></script>
+  <script src="/js/follow.js"></script>
+</body>
+</html>

@@ -7,8 +7,11 @@
 
 const PM_STATUSES = ["idea", "planned", "active", "paused", "done", "archived"];
 const MILESTONE_STATUSES = ["planned", "active", "done", "dropped"];
-const NOTE_KINDS = ["info", "decision", "log"];
+const NOTE_KINDS = ["info", "decision", "log", "update"];
+const NOTE_KIND_LABELS = { update: "Client update" };
 const LINK_KEYS = ["repo", "live", "admin", "claude_project", "supabase", "docs", "drive"];
+const CLIENT_LANGS = ["pt", "en"];
+const CLIENT_LANG_LABELS = { pt: "Português", en: "English" };
 const OWNER_FILTERS = [
   ["all", "All"],
   ["client", "Clients"],
@@ -93,6 +96,49 @@ function formatDate(iso) {
 
 function isOverdue(iso) {
   return Boolean(iso) && iso.slice(0, 10) < new Date().toISOString().slice(0, 10);
+}
+
+/* Builds the client-facing share link from window.location, so it works
+   on any host (localhost, a Cloudflare Pages preview URL, production) and
+   under any base path pm.html happens to be served at. Pure — takes
+   origin/pathname as plain strings so it's testable without a real
+   window. */
+function buildShareLink(origin, pathname, token) {
+  const basePath = pathname.replace(/pm\.html$/, "");
+  return `${origin}${basePath}follow/?t=${token}`;
+}
+
+/* The Client view panel's "nothing exposed by accident" summary line. */
+function clientViewSummary(tasksVisible, milestonesVisible, updatesVisible) {
+  return `${tasksVisible} tasks, ${milestonesVisible} milestones, ${updatesVisible} updates visible`;
+}
+
+/* navigator.clipboard with a document.execCommand fallback for browsers/
+   contexts where the async Clipboard API isn't available (e.g. non-HTTPS,
+   older WebViews). Returns whether the copy actually succeeded. */
+async function copyToClipboard(text) {
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+  } catch (e) {
+    // fall through to the execCommand fallback below
+  }
+  try {
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    ta.style.position = "fixed";
+    ta.style.opacity = "0";
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    const ok = document.execCommand("copy");
+    document.body.removeChild(ta);
+    return ok;
+  } catch (e) {
+    return false;
+  }
 }
 
 /* ---------- data ---------- */
@@ -342,11 +388,118 @@ function renderDetail(p) {
 
   view.replaceChildren(
     header,
+    renderClientViewPanel(p),
     renderRoadmapPanel(p),
     renderNotesPanel(p),
     renderInfoPanel(p),
     renderDangerPanel(p)
   );
+}
+
+/* ---------- client view (/follow/?t=<share_token>) ---------- */
+
+function renderClientViewPanel(p) {
+  const tasksVisible = projectTasks(p.id).filter((t) => t.visible_to_client).length;
+  const milestonesVisible = projectMilestones(p.id).filter((m) => m.visible_to_client).length;
+  const updatesVisible = projectNotes(p.id).filter((n) => n.visible_to_client).length;
+
+  const enableToggle = el("input", {
+    type: "checkbox",
+    id: "cv-enable",
+    checked: p.client_view_enabled,
+    onchange: async (event) => {
+      const updated = await run(
+        sb.from("pm_projects").update({ client_view_enabled: event.target.checked }).eq("id", p.id).select().single(),
+        event.target.checked ? "Client view enabled" : "Client view disabled"
+      );
+      if (!updated) {
+        event.target.checked = !event.target.checked;
+        return;
+      }
+      Object.assign(p, updated);
+      renderDetail(p);
+    },
+  });
+
+  const langSelect = el(
+    "select",
+    {
+      id: "cv-lang",
+      "aria-label": "Client view language",
+      onchange: async (event) => {
+        const updated = await run(
+          sb.from("pm_projects").update({ client_lang: event.target.value }).eq("id", p.id).select().single()
+        );
+        if (updated) Object.assign(p, updated);
+      },
+    },
+    options(CLIENT_LANGS, p.client_lang, CLIENT_LANG_LABELS)
+  );
+
+  const children = [
+    el("h2", { text: "Client view" }),
+    el(
+      "div",
+      { class: "pm-form-grid" },
+      el("label", { class: "pm-field pm-inline-field" }, enableToggle, el("span", { text: "Enable" })),
+      el("label", { class: "pm-field pm-inline-field" }, el("span", { text: "Language" }), langSelect)
+    ),
+  ];
+
+  if (p.client_view_enabled && p.share_token) {
+    const link = buildShareLink(window.location.origin, window.location.pathname, p.share_token);
+    const linkInput = el("input", {
+      type: "text",
+      readOnly: true,
+      value: link,
+      "aria-label": "Client view link",
+      onclick: (event) => event.target.select(),
+    });
+    const copyBtn = el("button", {
+      type: "button",
+      class: "btn btn-ghost-light btn-sm",
+      text: "Copy",
+      onclick: async () => {
+        const ok = await copyToClipboard(link);
+        toast(ok ? "Link copied" : "Could not copy automatically — select the text and copy it", ok ? "ok" : "err");
+      },
+    });
+    const openBtn = el("a", {
+      href: link,
+      target: "_blank",
+      rel: "noopener",
+      class: "btn btn-ghost-light btn-sm",
+      text: "Open preview",
+    });
+    const rotateBtn = el("button", {
+      type: "button",
+      class: "btn btn-ghost-light btn-sm",
+      text: "Rotate link",
+      onclick: async () => {
+        if (!window.confirm("Rotate the link? The current link will stop working immediately.")) return;
+        const updated = await run(
+          sb.from("pm_projects").update({ share_token: null }).eq("id", p.id).select().single(),
+          "Link rotated"
+        );
+        if (!updated) return;
+        Object.assign(p, updated);
+        renderDetail(p);
+      },
+    });
+    children.push(
+      el("div", { class: "pm-share-row" }, linkInput, copyBtn, openBtn, rotateBtn),
+      el("p", {
+        class: "pm-muted",
+        text: "Anyone with the link can view the items marked visible. Nothing is visible by default.",
+      })
+    );
+  }
+
+  children.push(
+    el("p", { class: "pm-muted", text: clientViewSummary(tasksVisible, milestonesVisible, updatesVisible) })
+  );
+
+  return el("section", { class: "pm-panel" }, children);
 }
 
 function renderInfoPanel(p) {
@@ -426,6 +579,47 @@ function renderInfoPanel(p) {
   return form;
 }
 
+/* Eye-icon toggle for visible_to_client — used on task/milestone/note
+   rows alike. Accessible via aria-pressed + a descriptive aria-label
+   (the glyph alone never carries the state). */
+function visibleToggleButton(isVisible, label, onToggle) {
+  return el(
+    "button",
+    {
+      type: "button",
+      class: `pm-visible-toggle${isVisible ? " is-on" : ""}`,
+      "aria-pressed": isVisible ? "true" : "false",
+      "aria-label": `${label}: ${isVisible ? "visible to client" : "hidden from client"}`,
+      title: isVisible ? "Visible to client — click to hide" : "Hidden from client — click to show",
+      onclick: onToggle,
+    },
+    el("span", { "aria-hidden": "true", text: isVisible ? "👁" : "–" })
+  );
+}
+
+/* "Client" chip shown on a row currently visible, so André can scan what
+   the client sees at a glance without opening /follow/ himself. */
+function clientChip(isVisible) {
+  return isVisible ? el("span", { class: "pm-badge pm-badge-client", text: "Client" }) : null;
+}
+
+function ownerToggleButton(task) {
+  const isClient = task.owner === "client";
+  return el("button", {
+    type: "button",
+    class: `pm-chip pm-owner-chip${isClient ? " is-client" : ""}`,
+    "aria-label": `Owner: ${isClient ? "Client" : "Me"} — click to toggle`,
+    text: isClient ? "Client" : "Me",
+    onclick: async () => {
+      const updated = await run(
+        sb.from("pm_tasks").update({ owner: isClient ? "me" : "client" }).eq("id", task.id).select().single()
+      );
+      if (updated) Object.assign(task, updated);
+      route();
+    },
+  });
+}
+
 function taskRow(task) {
   const checkbox = el("input", {
     type: "checkbox",
@@ -451,6 +645,15 @@ function taskRow(task) {
     task.due_date
       ? el("span", { class: `pm-task-due${!task.done && isOverdue(task.due_date) ? " is-overdue" : ""}`, text: formatDate(task.due_date) })
       : null,
+    clientChip(task.visible_to_client),
+    ownerToggleButton(task),
+    visibleToggleButton(task.visible_to_client, `task "${task.title}"`, async () => {
+      const updated = await run(
+        sb.from("pm_tasks").update({ visible_to_client: !task.visible_to_client }).eq("id", task.id).select().single()
+      );
+      if (updated) Object.assign(task, updated);
+      route();
+    }),
     el("button", {
       type: "button",
       class: "pm-icon-btn",
@@ -524,6 +727,14 @@ function renderRoadmapPanel(p) {
         el("h3", { text: m.title }),
         statusSelect,
         m.target_date ? el("span", { class: "pm-task-due", text: formatDate(m.target_date) }) : null,
+        clientChip(m.visible_to_client),
+        visibleToggleButton(m.visible_to_client, `milestone "${m.title}"`, async () => {
+          const updated = await run(
+            sb.from("pm_milestones").update({ visible_to_client: !m.visible_to_client }).eq("id", m.id).select().single()
+          );
+          if (updated) Object.assign(m, updated);
+          route();
+        }),
         el("button", {
           type: "button",
           class: "pm-icon-btn",
@@ -586,7 +797,7 @@ function renderRoadmapPanel(p) {
 function renderNotesPanel(p) {
   const notes = projectNotes(p.id);
   const body = el("textarea", { rows: 2, placeholder: "Key info, a decision, or a log entry…", required: true });
-  const kind = el("select", { "aria-label": "Note type" }, options(NOTE_KINDS, "log"));
+  const kind = el("select", { "aria-label": "Note type" }, options(NOTE_KINDS, "log", NOTE_KIND_LABELS));
 
   const list = el(
     "ul",
@@ -598,8 +809,16 @@ function renderNotesPanel(p) {
         el(
           "div",
           { class: "pm-note-head" },
-          el("span", { class: `pm-badge k-${n.kind}`, text: n.kind }),
+          el("span", { class: `pm-badge k-${n.kind}`, text: NOTE_KIND_LABELS[n.kind] || n.kind }),
           el("time", { text: formatDate(n.created_at) }),
+          clientChip(n.visible_to_client),
+          visibleToggleButton(n.visible_to_client, "note", async () => {
+            const updated = await run(
+              sb.from("pm_notes").update({ visible_to_client: !n.visible_to_client }).eq("id", n.id).select().single()
+            );
+            if (updated) Object.assign(n, updated);
+            route();
+          }),
           el("button", {
             type: "button",
             class: "pm-icon-btn",

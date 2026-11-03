@@ -57,8 +57,8 @@
     "cardImage": "",
     "screenshots": [],
     "description": {
-      "pt": "Sistema com 12 cenários no Make.com automatizando 100% do processo seletivo institucional, do primeiro contato à matrícula. Redução de ~80% nas operações após otimização.",
-      "en": "A system of 12 Make.com scenarios automating 100% of the institution's admissions process, from first contact to enrollment. About 80% reduction in manual operations after optimization."
+      "pt": "Sistema com 14 cenários no Make.com automatizando 100% do processo seletivo institucional, do primeiro contato à matrícula. Redução de ~80% nas operações após otimização.",
+      "en": "A system of 14 Make.com scenarios automating 100% of the institution's admissions process, from first contact to enrollment. About 80% reduction in manual operations after optimization."
     },
     "stack": ["Make.com", "Kommo CRM", "Tally", "ClickUp", "Excel", "Google Sheets", "OneDrive", "Outlook", "JavaScript"],
     "links": {
@@ -223,8 +223,8 @@
     "cardImage": "",
     "screenshots": [],
     "description": {
-      "pt": "Biblioteca de funções JavaScript utilitárias, sem dependências, extraídas e generalizadas de uma automação real em produção no Make.com (processo institucional de 12 cenários, 10+ ferramentas integradas), cada uma com teste próprio.",
-      "en": "Dependency-free JavaScript utility library, extracted and generalized from a real production Make.com automation (a 12-scenario institutional process integrating 10+ tools), each function with its own test."
+      "pt": "Biblioteca de funções JavaScript utilitárias, sem dependências, extraídas e generalizadas de uma automação real em produção no Make.com (processo institucional de 14 cenários, 10+ ferramentas integradas), cada uma com teste próprio.",
+      "en": "Dependency-free JavaScript utility library, extracted and generalized from a real production Make.com automation (a 14-scenario institutional process integrating 10+ tools), each function with its own test."
     },
     "stack": ["JavaScript", "Node.js"],
     "links": {

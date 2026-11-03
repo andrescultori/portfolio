@@ -75,6 +75,13 @@
 .k-info { background: #e6eef8; color: #2b5a92; }
 .k-decision { background: var(--commercial-soft); color: #9a5c0c; }
 .k-log { background: var(--line); color: var(--text-muted); }
+.k-update { background: #dcf3e6; color: #157a4a; }
+
+/* Client view: badge shown on a row currently visible to the client */
+.pm-badge-client {
+  background: var(--accent-soft, #dcf3e6); color: var(--accent-strong, #157a4a);
+  font: 600 10.5px var(--font-body); letter-spacing: .02em;
+}
 
 /* Panels */
 .pm-panel {
@@ -157,3 +164,22 @@
 .pm-links-edit[open] summary { margin-bottom: 12px; }
 .pm-tabs { margin-bottom: 20px; }
 .pm-tabs span.btn { cursor: default; }
+
+/* Client view panel */
+.pm-inline-field { flex-direction: row !important; align-items: center; gap: 8px !important; }
+.pm-inline-field input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--accent); }
+.pm-inline-field select { width: auto; }
+.pm-share-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.pm-share-row input[type="text"] { flex: 1; min-width: 220px; font: 13px var(--font-body); }
+
+/* Visible-to-client eye toggle */
+.pm-visible-toggle {
+  border: 1px solid transparent; background: none; cursor: pointer; color: var(--text-muted);
+  font-size: 15px; line-height: 1; padding: 4px 6px; border-radius: 6px;
+}
+.pm-visible-toggle:hover { background: var(--line); }
+.pm-visible-toggle.is-on { color: var(--accent-strong); border-color: var(--accent-soft); background: var(--accent-soft); }
+
+/* Owner chip (Me / Client) */
+.pm-owner-chip { padding: 3px 9px; font-size: 11.5px; }
+.pm-owner-chip.is-client { background: var(--accent-soft); border-color: var(--accent-soft); color: var(--accent-strong); }

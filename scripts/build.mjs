@@ -27,7 +27,7 @@ const LANGS = ["en", "pt"];
 /* Only admin.html/pm.html are copied as static templates now — every
    public page (home, /work/, project pages, both languages) is fully
    rendered from scripts/lib/render-*.mjs below, no HTML template file. */
-const INCLUDE = ["admin.html", "pm.html", "css", "js", "img", "data"];
+const INCLUDE = ["admin.html", "pm.html", "follow", "css", "js", "img", "data"];
 
 function log(msg) {
   console.log(`[build] ${msg}`);
@@ -276,7 +276,7 @@ async function main() {
   writeFileSync(path.join(DIST, "sitemap.xml"), buildSitemapWithAlternates(sitemapEntries), "utf8");
   writeFileSync(
     path.join(DIST, "robots.txt"),
-    buildRobotsTxt(SITE_URL, { disallow: ["/admin.html", "/pm.html"] }),
+    buildRobotsTxt(SITE_URL, { disallow: ["/admin.html", "/pm.html", "/follow/"] }),
     "utf8"
   );
   writeFileSync(path.join(DIST, "_redirects"), buildRedirects(projects.map((p) => p.slug)), "utf8");
