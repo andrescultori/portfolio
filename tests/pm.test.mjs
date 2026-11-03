@@ -122,3 +122,13 @@ test("stackFromRepoData combines languages, npm/python deps and root files", () 
 test("mergeStack keeps existing entries in order and only appends new ones (case-insensitive)", () => {
   assert.deepEqual(Array.from(sandbox.mergeStack(["Make.com", " HTML "], ["html", "Supabase", "Make.com"])), ["Make.com", "HTML", "Supabase"]);
 });
+
+test("buildShareLink handles the clean URL /pm that Cloudflare Pages serves", () => {
+  for (const pathname of ["/pm", "/pm/"]) {
+    assert.equal(
+      sandbox.buildShareLink("https://andrescultori.pages.dev", pathname, "tok"),
+      "https://andrescultori.pages.dev/follow/?t=tok"
+    );
+  }
+  assert.equal(sandbox.buildShareLink("https://x.pages.dev", "/preview/pm", "tok"), "https://x.pages.dev/preview/follow/?t=tok");
+});
