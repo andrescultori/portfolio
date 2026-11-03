@@ -622,3 +622,17 @@ test("renderProjectPage's static output (dist/projeto/<slug>/index.html) loads j
   });
   assertSupabaseConfigLoadsBeforeDependents(html, "dist/projeto/<slug>/index.html");
 });
+
+// --- pm.html (project manager) ---------------------------------------
+
+test("pm.html is copied by the build and loads supabase-config before pm.js", () => {
+  const build = readFileSync(path.join(REPO_ROOT, "scripts", "build.mjs"), "utf8");
+  assert.match(build, /const INCLUDE = \[[^\]]*"pm\.html"/);
+  const html = readFileSync(path.join(REPO_ROOT, "pm.html"), "utf8");
+  const names = scriptSrcs(html);
+  const config = names.indexOf("js/supabase-config.js");
+  const pm = names.indexOf("js/pm.js");
+  assert.notEqual(config, -1);
+  assert.ok(pm > config, "js/supabase-config.js must load before js/pm.js");
+  assert.match(html, /<meta name="robots" content="noindex, nofollow">/);
+});
