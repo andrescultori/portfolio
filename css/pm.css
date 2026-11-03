@@ -203,3 +203,5 @@
 .pm-phase-edit { flex-wrap: wrap; width: 100%; }
 .pm-phase-edit input[type="text"] { flex: 1 1 200px; }
 .pm-icon-btn:disabled { opacity: 0.3; cursor: default; }
+
+.pm-visible-toggle { white-space: nowrap; }
