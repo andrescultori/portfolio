@@ -30,7 +30,7 @@ const ROOT = path.join(__dirname, "..");
 const DIST = path.join(ROOT, "dist");
 const SITE_SETTINGS_STORAGE_BUCKET = "portfolio-images";
 
-const INCLUDE = ["index.html", "projeto.html", "contato.html", "admin.html", "css", "js", "img", "data"];
+const INCLUDE = ["index.html", "projeto.html", "contato.html", "admin.html", "pm.html", "css", "js", "img", "data"];
 
 const CARDS_MARKER = /<!-- PRERENDER:CARDS:START -->[\s\S]*?<!-- PRERENDER:CARDS:END -->/;
 const NOSCRIPT_MARKER = "<!-- PRERENDER:NOSCRIPT -->";

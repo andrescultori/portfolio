@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Project Manager | André Scultori</title>
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="icon" href="img/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/pm.css">
+</head>
+<body class="pm-body">
+
+  <header class="site-header">
+    <div class="wrap">
+      <a class="brand" href="index.html">
+        <span class="brand-mark">AS</span>
+        Projects
+      </a>
+      <nav class="nav-links">
+        <a class="nav-link" href="admin.html">Portfolio admin</a>
+        <button type="button" class="btn btn-ghost-dark btn-sm" id="btn-logout" hidden>Sign out</button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="admin-main">
+    <div class="wrap">
+
+      <section id="pm-login" class="admin-card" hidden>
+        <h1>Restricted area</h1>
+        <button type="button" class="btn btn-primary" id="btn-login-github">Sign in with GitHub</button>
+        <p class="form-status" id="login-status"></p>
+      </section>
+
+      <section id="pm-forbidden" class="admin-card" hidden>
+        <h1>Access denied</h1>
+        <p>This account is not allowed to use the project manager.</p>
+        <button type="button" class="btn btn-primary" id="btn-logout-forbidden">Sign out</button>
+      </section>
+
+      <section id="pm-app" hidden>
+        <div id="pm-list-view">
+          <div class="pm-toolbar">
+            <h1 class="pm-title">Projects</h1>
+            <button type="button" class="btn btn-primary btn-sm" id="btn-new-project">+ New project</button>
+          </div>
+
+          <div class="pm-stats" id="pm-stats"></div>
+
+          <div class="pm-filters">
+            <input type="search" id="pm-search" placeholder="Search projects or clients…" aria-label="Search">
+            <div class="pm-chips" id="pm-owner-chips" role="group" aria-label="Ownership"></div>
+            <div class="pm-chips" id="pm-status-chips" role="group" aria-label="Status"></div>
+          </div>
+
+          <form id="pm-new-form" class="pm-panel" hidden>
+            <h2>New project</h2>
+            <label>Name <input type="text" name="name" required></label>
+            <label>Client
+              <select name="client_id" id="pm-new-client"></select>
+            </label>
+            <label>Status
+              <select name="status" id="pm-new-status"></select>
+            </label>
+            <div class="pm-actions">
+              <button type="submit" class="btn btn-primary btn-sm">Create</button>
+              <button type="button" class="btn btn-ghost-light btn-sm" id="btn-cancel-new">Cancel</button>
+            </div>
+          </form>
+
+          <div id="pm-list"></div>
+        </div>
+
+        <div id="pm-detail-view" hidden></div>
+      </section>
+
+      <div id="pm-toast" class="pm-toast" role="status" aria-live="polite" hidden></div>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <div class="footer-bottom" style="border-top:1px solid rgba(244,243,240,.1); padding-top:20px;">
+        <span>Private workspace.</span>
+        <span>
+          Desenvolvido por
+          <a href="https://github.com/andrescultori" target="_blank" rel="noopener">André Scultori</a>
+          &nbsp;·&nbsp;© 2026&nbsp;·&nbsp;
+          <a href="https://github.com/andrescultori/portfolio" target="_blank" rel="noopener">GitHub</a>
+        </span>
+      </div>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="js/supabase-config.js"></script>
+  <script src="js/pm.js"></script>
+</body>
+</html>
