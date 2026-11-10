@@ -10,6 +10,7 @@ import { validateProject, isValidUrl, BuildValidationError } from "./lib/validat
 import { slugify } from "./lib/slug.mjs";
 import { resetDist, copySiteFiles } from "./lib/copy.mjs";
 import { renderHomePage } from "./lib/render-home.mjs";
+import { renderUnderConstructionPage } from "./lib/render-under-construction.mjs";
 import { renderWorkIndexPage } from "./lib/render-work-index.mjs";
 import { renderProjectPage } from "./lib/render-project-page.mjs";
 import { buildSitemapWithAlternates, buildRobotsTxt, buildPersonJsonLd } from "./lib/seo.mjs";
@@ -23,6 +24,14 @@ const ROOT = path.join(__dirname, "..");
 const DIST = path.join(ROOT, "dist");
 const SITE_SETTINGS_STORAGE_BUCKET = "portfolio-images";
 const LANGS = ["en", "pt"];
+
+/* André isn't settled on the new home page design yet — until this flips
+   back to false, / and /pt/ show a minimal "Under construction" page
+   instead of the real renderHomePage() output. Nothing else is affected:
+   /work/, project pages, admin.html and pm.html render exactly as
+   before. Flip this back to false (or delete it and the branch below)
+   once the design is approved. */
+const HOME_UNDER_CONSTRUCTION = true;
 
 /* Only admin.html/pm.html are copied as static templates now — every
    public page (home, /work/, project pages, both languages) is fully
@@ -220,26 +229,30 @@ async function main() {
   }
 
   // Home page (both languages).
+  if (HOME_UNDER_CONSTRUCTION) {
+    log("Home: HOME_UNDER_CONSTRUCTION=true — rendering the placeholder instead of the real home page.");
+  }
   for (const lang of LANGS) {
-    const jsonLd = buildPersonJsonLd({
-      siteUrl: SITE_URL,
-      social: effectiveLinks,
-      image: photoUrl || undefined,
-      jobTitle: JOB_TITLE[lang],
-      knowsAbout: services.map((svc) => (svc.title && (svc.title[lang] || svc.title.en)) || "").filter(Boolean),
-    });
-    const html = renderHomePage({
-      lang,
-      projects,
-      services,
-      process: processSteps,
-      clients,
-      siteUrl: SITE_URL,
-      social: effectiveLinks,
-      photoUrl,
-      heroOverrides: heroOverrides[lang],
-      jsonLd,
-    });
+    const html = HOME_UNDER_CONSTRUCTION
+      ? renderUnderConstructionPage({ lang, siteUrl: SITE_URL, social: effectiveLinks })
+      : renderHomePage({
+          lang,
+          projects,
+          services,
+          process: processSteps,
+          clients,
+          siteUrl: SITE_URL,
+          social: effectiveLinks,
+          photoUrl,
+          heroOverrides: heroOverrides[lang],
+          jsonLd: buildPersonJsonLd({
+            siteUrl: SITE_URL,
+            social: effectiveLinks,
+            image: photoUrl || undefined,
+            jobTitle: JOB_TITLE[lang],
+            knowsAbout: services.map((svc) => (svc.title && (svc.title[lang] || svc.title.en)) || "").filter(Boolean),
+          }),
+        });
     writePage(homePath(lang), html);
   }
   addSitemapPair(homePath);
