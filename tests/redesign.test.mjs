@@ -132,6 +132,12 @@ test("buildRedirects 301s the retired pages and every old /projeto/<slug>/ URL t
   assert.match(txt, /^\/projeto\/apuracao-eleicoes\/ \/pt\/projetos\/apuracao-eleicoes\/ 301$/m);
 });
 
+test("buildRedirects sends /hub to the private hub with a temporary (302) redirect", () => {
+  const txt = buildRedirects([]);
+  assert.match(txt, /^\/hub https:\/\/amshub\.pages\.dev\/ 302$/m);
+  assert.match(txt, /^\/hub\/\* https:\/\/amshub\.pages\.dev\/:splat 302$/m);
+});
+
 // --- hidden-when-empty behavior ------------------------------------------------
 
 test("the 'Worked with' clients strip renders nothing when no client is approved", () => {
