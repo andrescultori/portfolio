@@ -34,7 +34,7 @@
 
 @media (max-width: 640px) {
   :root {
-    --gutter: 16px;
+    --gutter: 20px;
     --section-pad: 56px;
   }
 }
@@ -701,7 +701,11 @@ img { max-width: 100%; display: block; }
   align-items: center;
 }
 .uc-wrap {
-  padding: 64px 0;
+  /* padding-block only — a plain `padding` shorthand here would reset
+     .wrap's own left/right padding to 0 (equal specificity, later in the
+     cascade), leaving this content flush against the viewport edge on
+     mobile. See tests/redesign.test.mjs's generalized check for this. */
+  padding-block: 64px;
   max-width: 560px;
   display: flex;
   flex-direction: column;

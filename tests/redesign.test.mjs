@@ -350,12 +350,38 @@ test("dist/_redirects and dist/robots.txt exist with the expected rules", { skip
 });
 
 test("classes combined with .wrap never zero the horizontal gutter", async () => {
-  const { readFile } = await import("node:fs/promises");
+  // Generalized: auto-discovers every class ever combined with "wrap" on
+  // the same element (class="wrap foo", in any order) across every
+  // scripts/lib/*.mjs renderer, rather than a hand-maintained list — a
+  // combined class using the `padding` shorthand (even for an unrelated,
+  // vertical-only reason) resets padding-left/right to 0 too, silently
+  // cancelling .wrap's own `padding: 0 var(--gutter)` and leaving mobile
+  // content flush against the viewport edge. This caught a real bug once
+  // (.uc-wrap) and must keep catching it for every new class.
+  const { readFile, readdir } = await import("node:fs/promises");
   const css = await readFile(new URL("../css/site.css", import.meta.url), "utf8");
-  for (const cls of ["hero-inner", "contact-inner", "cs-cta-inner", "cs-results-row"]) {
-    const re = new RegExp("\\." + cls + "\\s*\\{[^}]*?padding:\\s*[^;]+;", "g");
-    assert.equal((css.match(re) || []).length, 0, "." + cls + " must use padding-block, not padding shorthand");
+  const libDir = new URL("../scripts/lib/", import.meta.url);
+  const files = (await readdir(libDir)).filter((f) => f.endsWith(".mjs"));
+
+  const combinedClasses = new Set();
+  const classAttrRe = /class="([^"]*\bwrap\b[^"]*)"/g;
+  for (const file of files) {
+    const src = await readFile(new URL(file, libDir), "utf8");
+    for (const match of src.matchAll(classAttrRe)) {
+      match[1]
+        .split(/\s+/)
+        .filter((c) => c && c !== "wrap")
+        .forEach((c) => combinedClasses.add(c));
+    }
   }
+  assert.ok(combinedClasses.size > 0, "expected to find at least one class combined with .wrap — check the scan itself isn't broken");
+
+  const offenders = [];
+  for (const cls of combinedClasses) {
+    const re = new RegExp("\\." + cls + "\\s*\\{[^}]*?\\bpadding:\\s*[^;]+;", "g");
+    if (re.test(css)) offenders.push(cls);
+  }
+  assert.deepEqual(offenders, [], "these classes are combined with .wrap but use the `padding` shorthand (must use padding-block/padding-left/padding-right instead): " + offenders.join(", "));
 });
 
 test("nav menu closes on scroll, Escape, link tap and resize", async () => {
