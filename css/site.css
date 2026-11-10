@@ -34,7 +34,7 @@
 
 @media (max-width: 640px) {
   :root {
-    --gutter: 16px;
+    --gutter: 20px;
     --section-pad: 56px;
   }
 }
