@@ -687,3 +687,32 @@ img { max-width: 100%; display: block; }
     transition: none !important;
   }
 }
+
+/* -------------------------------------------------------------------------
+   Temporary: home page "Under construction" stand-in
+   (scripts/lib/render-under-construction.mjs / build.mjs's
+   HOME_UNDER_CONSTRUCTION flag). Safe to delete once that flag is
+   removed for good.
+   ------------------------------------------------------------------------- */
+
+.uc-main {
+  min-height: calc(100vh - 72px - 140px);
+  display: flex;
+  align-items: center;
+}
+.uc-wrap {
+  padding: 64px 0;
+  max-width: 560px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.uc-main h1 { font-size: 40px; line-height: 1.15; font-weight: 600; letter-spacing: -0.02em; }
+.uc-body { font-size: 18px; color: var(--muted); }
+.uc-actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 8px; }
+
+@media (max-width: 640px) {
+  .uc-main h1 { font-size: 30px; }
+  .uc-actions { flex-direction: column; }
+  .uc-actions .btn { width: 100%; }
+}
