@@ -47,7 +47,8 @@ a { color: var(--fw-accent); }
   color: var(--fw-muted);
 }
 
-#fw-main { padding: 32px 0 64px; }
+/* Vertical only: the horizontal gutter comes from .fw-wrap (an ID rule here would override it, which left the content flush with the screen edge on phones). */
+#fw-main { padding-top: 32px; padding-bottom: 64px; }
 
 h1 { font-size: 28px; line-height: 1.2; font-weight: 600; margin: 0 0 12px; letter-spacing: -0.01em; }
 h2 { font-size: 18px; font-weight: 600; margin: 0 0 12px; }
