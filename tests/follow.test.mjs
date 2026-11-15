@@ -154,3 +154,18 @@ test("getToken reads 't' from window.location.search", () => {
   sandbox.window.location.search = "";
   assert.equal(sandbox.getToken(), null);
 });
+
+// --- client link on a task ----------------------------------------------
+
+test("safeLink() lets only plain http(s) links through", () => {
+  assert.equal(sandbox.safeLink("https://claude.ai/artifact/abc"), "https://claude.ai/artifact/abc");
+  assert.equal(sandbox.safeLink("http://example.com/x?y=1"), "http://example.com/x?y=1");
+  for (const bad of ["javascript:alert(1)", "data:text/html,x", "ftp://x.org", "claude.ai/x", "https://a b", "", null, undefined, 42, "https://x.org/" + "a".repeat(2000)]) {
+    assert.equal(sandbox.safeLink(bad), null, String(bad));
+  }
+});
+
+test("open_link label exists in pt and en", () => {
+  assert.equal(sandbox.t("pt", "open_link"), "Abrir link");
+  assert.equal(sandbox.t("en", "open_link"), "Open link");
+});

@@ -149,6 +149,18 @@ h3 { font-size: 15px; font-weight: 600; margin: 16px 0 8px; color: var(--fw-mute
 .fw-task-item.is-done .fw-task-title { color: var(--fw-muted); text-decoration: line-through; }
 .fw-task-check { flex: none; width: 16px; text-align: center; color: var(--fw-accent); }
 .fw-task-title { flex: 1; }
+.fw-task-link {
+  flex: none;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--fw-accent);
+  text-decoration: none;
+  border: 1px solid var(--fw-line);
+  border-radius: 999px;
+  padding: 3px 10px;
+  white-space: nowrap;
+}
+.fw-task-link:hover, .fw-task-link:focus-visible { border-color: var(--fw-accent); text-decoration: underline; }
 .fw-owner-tag {
   font-family: "IBM Plex Mono", monospace;
   font-size: 11px;
