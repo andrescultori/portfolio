@@ -40,6 +40,7 @@ var FW_STRINGS = {
     phases_complete: "{done} de {total} fases concluídas",
     tasks_count: "{done}/{total} tarefas",
     other_tasks_title: "Outras tarefas",
+    open_link: "Abrir link",
     updates_title: "Atualizações",
     footer_text: "Página somente leitura. Dúvidas? ",
     invalid_link: "Este link é inválido ou não está mais ativo.",
@@ -69,6 +70,7 @@ var FW_STRINGS = {
     phases_complete: "{done} of {total} phases complete",
     tasks_count: "{done}/{total} tasks",
     other_tasks_title: "Other tasks",
+    open_link: "Open link",
     updates_title: "Updates",
     footer_text: "Read-only page. Questions? ",
     invalid_link: "This link is invalid or no longer active.",
@@ -186,6 +188,19 @@ function el(tag, attrs, children) {
   return node;
 }
 
+/* A task's optional link for the client (e.g. a mockup to review). Only plain
+   http(s) links are ever rendered as a link; anything else is dropped, so a
+   bad value (javascript:, data:, spaces) can never become a clickable href. */
+function safeLink(url) {
+  return typeof url === "string" && url.length <= 2000 && /^https?:\/\/\S+$/i.test(url) ? url : null;
+}
+
+function taskLinkEl(lang, task) {
+  var href = safeLink(task.link);
+  if (!href) return null;
+  return el("a", { class: "fw-task-link", href: href, target: "_blank", rel: "noopener noreferrer", text: t(lang, "open_link") + " ↗" });
+}
+
 function taskItemEl(lang, task, showOwner) {
   var due = task.due_date
     ? el("span", { class: "fw-due" + (!task.done && isOverdue(task.due_date) ? " is-overdue" : ""), text: formatDate(task.due_date, lang) })
@@ -194,6 +209,7 @@ function taskItemEl(lang, task, showOwner) {
   return el("li", { class: "fw-task-item" + (task.done ? " is-done" : "") }, [
     el("span", { class: "fw-task-check", "aria-hidden": "true", text: task.done ? "✓" : "○" }),
     el("span", { class: "fw-task-title", text: task.title }),
+    taskLinkEl(lang, task),
     owner,
     due,
   ]);
@@ -205,6 +221,7 @@ function waitingItemEl(lang, task) {
     : null;
   return el("li", { class: "fw-waiting-item" }, [
     el("span", { class: "fw-task-title", text: task.title }),
+    taskLinkEl(lang, task),
     due,
   ]);
 }
