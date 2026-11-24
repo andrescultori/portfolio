@@ -86,19 +86,19 @@ test("dist/css/follow.css and dist/js/follow.js exist", { skip: !existsSync(DIST
 
 // --- data fix: processo-seletivo now says 14 scenarios, consistently --------
 
-test("data/projects.json: processo-seletivo and js-utils-automation say 14 scenarios (PT and EN), matching the live DB", () => {
+test("data/projects.json: processo-seletivo and js-utils-automation say 16 scenarios (PT and EN), matching the live DB", () => {
   const data = JSON.parse(readFileSync(path.join(REPO_ROOT, "data", "projects.json"), "utf8"));
   const bySlug = Object.fromEntries(data.map((p) => [p.slug, p]));
 
   const ps = bySlug["processo-seletivo"];
   assert.ok(ps, "processo-seletivo not found in data/projects.json");
-  assert.match(ps.description.pt, /14 cenários/);
-  assert.match(ps.description.en, /14 Make\.com scenarios/);
-  assert.ok(!/\b12\b.*cen[aá]rio/i.test(ps.description.pt), "processo-seletivo PT description still says 12");
-  assert.ok(!/\b12\b.*scenario/i.test(ps.description.en), "processo-seletivo EN description still says 12");
+  assert.match(ps.description.pt, /16 cenários/);
+  assert.match(ps.description.en, /16 Make\.com scenarios/);
+  assert.ok(!/\b1[24]\b.*cen[aá]rio/i.test(ps.description.pt), "processo-seletivo PT description still says 12/14");
+  assert.ok(!/\b1[24]\b.*scenario/i.test(ps.description.en), "processo-seletivo EN description still says 12/14");
 
   const jsUtils = bySlug["js-utils-automation"];
   assert.ok(jsUtils, "js-utils-automation not found in data/projects.json");
-  assert.match(jsUtils.description.pt, /14 cenários/);
-  assert.match(jsUtils.description.en, /14-scenario/);
+  assert.match(jsUtils.description.pt, /16 cenários/);
+  assert.match(jsUtils.description.en, /16-scenario/);
 });
