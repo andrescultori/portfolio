@@ -77,22 +77,20 @@ test("project pages load js/motion.js with defer, for both layouts (case-study a
   });
 });
 
-test("the hero dashboard sketch carries data-grow on its bars and lines, decorative (aria-hidden)", () => {
+test("the hero's BI mock visual is decorative (aria-hidden) and its bars carry data-grow", () => {
   const html = homeHtml();
-  assert.match(html, /<div class="dash" aria-hidden="true">/);
-  assert.ok((html.match(/data-grow(?:="x")?/g) || []).length >= 8 + 3, "expected 8 bars + 3 line fills with data-grow");
+  assert.match(html, /<div class="project-visual bi-mock" aria-hidden="true">/);
+  assert.ok((html.match(/data-grow(?=[="\s>])/g) || []).length >= 8, "expected at least 8 bars with data-grow");
 });
 
-test("the hero sketch has no invented numbers in its visible text (only CSS sizing, which is decorative layout, not data)", () => {
+test("the hero's BI mock visual has no invented numbers in its visible text (only the 'R$ •••' placeholder and CSS sizing)", () => {
   const html = homeHtml();
-  const sketchMatch = html.match(/<div class="dash" aria-hidden="true">[\s\S]*?<p class="dash-caption">/);
-  assert.ok(sketchMatch, "hero sketch block not found");
+  const visualMatch = html.match(/<div class="project-visual bi-mock" aria-hidden="true">[\s\S]*?<p class="dash-caption">[\s\S]*?<\/p>/);
+  assert.ok(visualMatch, "hero visual block not found");
   // Strip every attribute (style="height:40px" etc. is layout, not content)
   // and every tag, leaving only text nodes — those must contain no digits.
-  const textOnly = sketchMatch[0]
-    .replace(/<[a-zA-Z][^>]*>/g, "<>")
-    .replace(/<>/g, "");
-  assert.doesNotMatch(textOnly, /\d/, "the decorative sketch's visible text must not contain any digits");
+  const textOnly = visualMatch[0].replace(/<[a-zA-Z][^>]*>/g, "<>").replace(/<>/g, "");
+  assert.doesNotMatch(textOnly, /\d/, "the decorative BI mock's visible text must not contain any digits");
 });
 
 // --- reveal-fallback safety timeout must be conditional on motion-ready ---

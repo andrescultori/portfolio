@@ -27,16 +27,17 @@ export const STRINGS = {
     nav_process: "Process",
     nav_about: "About",
     nav_book_call: "Book a call",
+    nav_get_in_touch: "Get in touch",
     nav_menu: "Menu",
 
     hero_eyebrow_default: "BI & automation consultant · Maringá, Brazil · Remote",
-    hero_h1: "I turn scattered spreadsheets and manual processes into dashboards and automations teams actually use.",
+    hero_h1_plain: "Smart solutions to ",
+    hero_h1_accent: "run your business.",
     hero_sub_default:
       "Fifteen years running operations in education, now building data products with Power BI, Power Query and Make.com for small teams and organizations in Brazil and abroad.",
     hero_cta_primary: "See case studies",
-    hero_cta_secondary: "Book a call",
+    hero_cta_secondary: "Get in touch",
     hero_note: "Open to full-time remote roles and selected freelance projects.",
-    hero_sketch_caption: "Layout sketch — replace with a real dashboard screenshot",
 
     worked_with: "Worked with",
 
@@ -44,9 +45,10 @@ export const STRINGS = {
     services_h2: "Three ways I can help your team work with better data.",
     timeline_prefix: "Typical timeline: ",
 
-    work_eyebrow: "Selected work",
-    work_h2: "Problem, approach, result.",
-    work_all_link: "All case studies",
+    work_eyebrow: "Work",
+    work_h2: "Selected projects",
+    work_all_link: "All projects",
+    view_project_link: "View project",
 
     process_eyebrow: "How I work",
     process_h2: "Four steps, with something to look at after each one.",
@@ -114,17 +116,17 @@ export const STRINGS = {
     nav_process: "Processo",
     nav_about: "Sobre",
     nav_book_call: "Agendar conversa",
+    nav_get_in_touch: "Fale comigo",
     nav_menu: "Menu",
 
     hero_eyebrow_default: "Consultor de BI & automação · Maringá, Brasil · Remoto",
-    hero_h1:
-      "Transformo planilhas espalhadas e processos manuais em dashboards e automações que o time realmente usa.",
+    hero_h1_plain: "Soluções inteligentes para ",
+    hero_h1_accent: "gerir seu negócio.",
     hero_sub_default:
       "Quinze anos gerindo operações na área de educação, hoje construindo produtos de dados com Power BI, Power Query e Make.com para times e organizações pequenas no Brasil e no exterior.",
     hero_cta_primary: "Ver estudos de caso",
-    hero_cta_secondary: "Agendar conversa",
+    hero_cta_secondary: "Entrar em contato",
     hero_note: "Aberto a vagas remotas CLT/PJ e projetos freelance selecionados.",
-    hero_sketch_caption: "Esboço de layout — substituir por uma captura de tela real do dashboard",
 
     worked_with: "Já trabalhei com",
 
@@ -132,9 +134,10 @@ export const STRINGS = {
     services_h2: "Três formas de ajudar seu time a trabalhar melhor com dados.",
     timeline_prefix: "Prazo típico: ",
 
-    work_eyebrow: "Projetos selecionados",
-    work_h2: "Problema, abordagem, resultado.",
-    work_all_link: "Todos os estudos de caso",
+    work_eyebrow: "Projetos",
+    work_h2: "Projetos selecionados",
+    work_all_link: "Todos os projetos",
+    view_project_link: "Ver projeto",
 
     process_eyebrow: "Como eu trabalho",
     process_h2: "Quatro etapas, com algo concreto para ver depois de cada uma.",
