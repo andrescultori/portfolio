@@ -1,45 +1,9 @@
 import { escapeHtml } from "./html.mjs";
 import { t, categoryLabel } from "./public-strings.mjs";
 import { homePath, workIndexPath, projectPath, absoluteUrl, assetSrc } from "./public-urls.mjs";
-import { renderHead, renderHeader, renderFooter, pageShell } from "./public-chrome.mjs";
-
-/* Decorative dashboard sketch on the right of the hero — pure CSS/divs, no
-   numbers (aria-hidden), easy to swap for a real screenshot later: just
-   replace the .hero-visual block's contents with an <img>. Bars/lines grow
-   via [data-grow] once visible (see js/motion.js + README's Motion section). */
-function heroSketchHtml(lang) {
-  const barHeights = [40, 64, 52, 88, 72, 104, 84, 124];
-  const bars = barHeights
-    .map((h, i) => {
-      const accent = i === 5 || i === 7 ? " accent" : "";
-      return `<div class="dash-bar${accent}" data-grow style="height:${h}px"></div>`;
-    })
-    .join("");
-  const lineFills = [82, 61, 38];
-  const lines = lineFills
-    .map(
-      (pct) => `<div class="dash-line-row">
-          <div class="dash-line-label"></div>
-          <div class="dash-line-track"><div class="dash-line-fill" data-grow="x" style="width:${pct}%"></div></div>
-        </div>`
-    )
-    .join("");
-  return `<div class="hero-visual">
-      <div class="dash" aria-hidden="true">
-        <div class="dash-tiles">
-          <div class="dash-tile"><div class="dash-tile-label" style="width:56%"></div><div class="dash-tile-value" style="width:78%"></div></div>
-          <div class="dash-tile"><div class="dash-tile-label" style="width:64%"></div><div class="dash-tile-value" style="width:60%"></div></div>
-          <div class="dash-tile"><div class="dash-tile-label" style="width:48%"></div><div class="dash-tile-value accent" style="width:70%"></div></div>
-        </div>
-        <div class="dash-chart">
-          <div class="dash-chart-label"></div>
-          <div class="dash-bars" data-grow-stagger="60">${bars}</div>
-        </div>
-        <div class="dash-lines">${lines}</div>
-      </div>
-      <p class="dash-caption">${escapeHtml(t(lang, "hero_sketch_caption"))}</p>
-    </div>`;
-}
+import { renderHead, renderHeader, renderFooter, pageShell, homeLangRedirectScript } from "./public-chrome.mjs";
+import { biMockVisualHtml, getProjectVisualHtml } from "./project-visuals.mjs";
+import { HOME_SECTIONS } from "./home-sections.mjs";
 
 function clientsStripHtml(lang, clients) {
   const approved = (clients || []).filter((c) => c && c.approved === true && c.logo);
@@ -79,32 +43,26 @@ function serviceCardHtml(lang, service, index) {
     </div>`;
 }
 
-function workCardHtml(lang, project) {
+/* Up to 4 featured projects (featured: true in data/projects.json or the
+   portfolio_projects table — any category), rendered as a horizontal row:
+   a decorative visual (scripts/lib/project-visuals.mjs) on one side, copy
+   and a "View project" link on the other. */
+function workRowHtml(lang, project, index) {
   const title = project.title || "";
-  const result =
-    project.caseStudy && Array.isArray(project.caseStudy.metrics) && project.caseStudy.metrics[0]
-      ? (project.caseStudy.metrics[0].label && project.caseStudy.metrics[0].label[lang]) ||
-        (project.caseStudy.metrics[0].label && project.caseStudy.metrics[0].label.en)
-          ? `${project.caseStudy.metrics[0].value} ${
-              (project.caseStudy.metrics[0].label[lang] || project.caseStudy.metrics[0].label.en || "").toLowerCase()
-            }`
-          : project.caseStudy.metrics[0].value
-      : "";
+  const desc = (project.description && (project.description[lang] || project.description.en)) || "";
+  const stackPreview = (project.stack || []).slice(0, 4).join(" · ");
   const href = projectPath(lang, project.slug);
-  const cover = project.cardImage || (project.screenshots && project.screenshots[0]) || "";
-  const coverHtml = cover
-    ? `<img src="${escapeHtml(assetSrc(cover))}" alt="" loading="lazy">`
-    : "";
-  const resultHtml = result ? `<p class="work-result mono">${escapeHtml(result)}</p>` : "";
-  return `<a class="work-card" href="${href}" data-reveal>
-      <div class="work-cover">${coverHtml}</div>
-      <div class="work-meta">
+  const visual = getProjectVisualHtml(lang, project);
+  return `<div class="work-row" data-reveal data-reveal-delay="${index * 60}">
+      <div class="work-row-visual">${visual}</div>
+      <div class="work-row-body">
         <span class="eyebrow" style="margin:0">${escapeHtml(categoryLabel(lang, project.category))}</span>
         <h3 class="work-title">${escapeHtml(title)}</h3>
-        ${resultHtml}
-        <p class="work-stack">${escapeHtml((project.stack || []).join(" · "))}</p>
+        <p class="work-row-desc">${escapeHtml(desc)}</p>
+        <p class="work-stack">${escapeHtml(stackPreview)}</p>
+        <a class="u link-arrow" href="${href}">${escapeHtml(t(lang, "view_project_link"))} <span class="arrow" aria-hidden="true">→</span></a>
       </div>
-    </a>`;
+    </div>`;
 }
 
 function processStepHtml(lang, step, index) {
@@ -136,22 +94,23 @@ export function renderHomePage({ lang, projects, services, process, clients, sit
   const heroEyebrow = (heroOverrides && heroOverrides.role) || s("hero_eyebrow_default");
   const heroSub = (heroOverrides && heroOverrides.bio) || s("hero_sub_default");
 
-  const head = renderHead({
-    lang,
-    title: lang === "pt" ? "André Scultori | Consultor de BI & Automação" : "André Scultori | BI & Automation Consultant",
-    description: heroSub,
-    canonicalUrl,
-    altUrls: altHrefs,
-    ogImage: photoUrl || undefined,
-    jsonLd,
-  });
+  const head =
+    renderHead({
+      lang,
+      title: lang === "pt" ? "André Scultori | Consultor de BI & Automação" : "André Scultori | BI & Automation Consultant",
+      description: heroSub,
+      canonicalUrl,
+      altUrls: altHrefs,
+      ogImage: photoUrl || undefined,
+      jsonLd,
+    }) + homeLangRedirectScript(lang);
 
   const header = renderHeader({ lang, homeHref, workHref, altHrefs, bookingUrl: social.booking, activeNav: null });
 
   const featuredWork = (projects || [])
-    .filter((p) => p.featured && (p.category === "data-bi" || p.category === "automation"))
+    .filter((p) => p.featured)
     .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0))
-    .slice(0, 3);
+    .slice(0, 4);
 
   const appsProjects = (projects || [])
     .filter((p) => p.category === "apps")
@@ -179,7 +138,38 @@ export function renderHomePage({ lang, projects, services, process, clients, sit
     .filter(Boolean)
     .join("\n        ");
 
-  const appsSection = appsProjects.length
+  const aboutLinks = [
+    social.linkedin ? `<a class="u" href="${escapeHtml(social.linkedin)}" target="_blank" rel="noopener">LinkedIn</a>` : "",
+    social.github ? `<a class="u" href="${escapeHtml(social.github)}" target="_blank" rel="noopener">GitHub</a>` : "",
+  ]
+    .filter(Boolean)
+    .join("\n          ");
+
+  const aboutDetailsHtml = HOME_SECTIONS.aboutDetails
+    ? `<dl class="about-dl">
+            <div class="about-dl-row"><dt>${escapeHtml(s("about_analytics_label"))}</dt><dd>${escapeHtml(s("about_analytics_value"))}</dd></div>
+            <div class="about-dl-row"><dt>${escapeHtml(s("about_automation_label"))}</dt><dd>${escapeHtml(s("about_automation_value"))}</dd></div>
+            <div class="about-dl-row"><dt>${escapeHtml(s("about_data_apps_label"))}</dt><dd>${escapeHtml(s("about_data_apps_value"))}</dd></div>
+            <div class="about-dl-row"><dt>${escapeHtml(s("about_education_label"))}</dt><dd>${escapeHtml(s("about_education_value"))}</dd></div>
+            <div class="about-dl-row"><dt>${escapeHtml(s("about_languages_label"))}</dt><dd>${escapeHtml(s("about_languages_value"))}</dd></div>
+          </dl>`
+    : "";
+
+  const processSection = HOME_SECTIONS.process
+    ? `<section id="process" class="section">
+      <div class="wrap">
+        <div class="section-head" data-reveal>
+          <p class="eyebrow">${escapeHtml(s("process_eyebrow"))}</p>
+          <h2>${escapeHtml(s("process_h2"))}</h2>
+        </div>
+        <div class="process-row">
+          ${(process || []).map((step, i) => processStepHtml(lang, step, i)).join("\n          ")}
+        </div>
+      </div>
+    </section>`
+    : "";
+
+  const appsSection = HOME_SECTIONS.sideProjects && appsProjects.length
     ? `<section class="section">
       <div class="wrap">
         <div class="section-head" data-reveal>
@@ -198,7 +188,7 @@ export function renderHomePage({ lang, projects, services, process, clients, sit
       <div class="wrap hero-inner">
         <div class="hero-copy" data-reveal>
           <p class="eyebrow">${escapeHtml(heroEyebrow)}</p>
-          <h1>${escapeHtml(s("hero_h1"))}</h1>
+          <h1>${escapeHtml(s("hero_h1_plain"))}<br><span class="accent-text">${escapeHtml(s("hero_h1_accent"))}</span></h1>
           <p class="hero-sub">${escapeHtml(heroSub)}</p>
           <div class="hero-actions">
             <a class="btn btn-primary" href="${workHref}">${escapeHtml(s("hero_cta_primary"))}</a>
@@ -206,7 +196,7 @@ export function renderHomePage({ lang, projects, services, process, clients, sit
           </div>
           <p class="hero-note">${escapeHtml(s("hero_note"))}</p>
         </div>
-        ${heroSketchHtml(lang)}
+        <div class="hero-visual">${biMockVisualHtml(lang)}</div>
       </div>
     </section>
 
@@ -233,23 +223,13 @@ export function renderHomePage({ lang, projects, services, process, clients, sit
           </div>
           <a class="u link-arrow" href="${workHref}">${escapeHtml(s("work_all_link"))} <span class="arrow" aria-hidden="true">→</span></a>
         </div>
-        <div class="cards-row">
-          ${featuredWork.map((p) => workCardHtml(lang, p)).join("\n          ")}
+        <div class="work-rows">
+          ${featuredWork.map((p, i) => workRowHtml(lang, p, i)).join("\n          ")}
         </div>
       </div>
     </section>
 
-    <section id="process" class="section">
-      <div class="wrap">
-        <div class="section-head" data-reveal>
-          <p class="eyebrow">${escapeHtml(s("process_eyebrow"))}</p>
-          <h2>${escapeHtml(s("process_h2"))}</h2>
-        </div>
-        <div class="process-row">
-          ${(process || []).map((step, i) => processStepHtml(lang, step, i)).join("\n          ")}
-        </div>
-      </div>
-    </section>
+    ${processSection}
 
     <section id="about" class="section" style="background:var(--surface);border-top:1px solid var(--line);border-bottom:1px solid var(--line)">
       <div class="wrap about-row">
@@ -258,13 +238,8 @@ export function renderHomePage({ lang, projects, services, process, clients, sit
           <p class="eyebrow">${escapeHtml(s("about_eyebrow"))}</p>
           <h2>${escapeHtml(s("about_h2"))}</h2>
           <p>${escapeHtml(s("about_p"))}</p>
-          <dl class="about-dl">
-            <div class="about-dl-row"><dt>${escapeHtml(s("about_analytics_label"))}</dt><dd>${escapeHtml(s("about_analytics_value"))}</dd></div>
-            <div class="about-dl-row"><dt>${escapeHtml(s("about_automation_label"))}</dt><dd>${escapeHtml(s("about_automation_value"))}</dd></div>
-            <div class="about-dl-row"><dt>${escapeHtml(s("about_data_apps_label"))}</dt><dd>${escapeHtml(s("about_data_apps_value"))}</dd></div>
-            <div class="about-dl-row"><dt>${escapeHtml(s("about_education_label"))}</dt><dd>${escapeHtml(s("about_education_value"))}</dd></div>
-            <div class="about-dl-row"><dt>${escapeHtml(s("about_languages_label"))}</dt><dd>${escapeHtml(s("about_languages_value"))}</dd></div>
-          </dl>
+          ${aboutDetailsHtml}
+          ${aboutLinks ? `<div style="display:flex;gap:20px">${aboutLinks}</div>` : ""}
         </div>
       </div>
     </section>

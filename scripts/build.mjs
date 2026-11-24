@@ -30,8 +30,13 @@ const LANGS = ["en", "pt"];
    instead of the real renderHomePage() output. Nothing else is affected:
    /work/, project pages, admin.html and pm.html render exactly as
    before. Flip this back to false (or delete it and the branch below)
-   once the design is approved. */
-const HOME_UNDER_CONSTRUCTION = true;
+   once the design is approved.
+
+   PREVIEW_HOME=1: lets you preview the real home page locally (screenshots,
+   manual QA) without flipping the flag above — never set in Cloudflare
+   Pages, so production always gets the placeholder until André flips this
+   back to false for good. See README.md/README.en.md. */
+const HOME_UNDER_CONSTRUCTION = process.env.PREVIEW_HOME === "1" ? false : true;
 
 /* Only admin.html/pm.html are copied as static templates now — every
    public page (home, /work/, project pages, both languages) is fully
