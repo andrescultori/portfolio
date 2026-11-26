@@ -1,6 +1,6 @@
 import { escapeHtml } from "./html.mjs";
 import { homePath, absoluteUrl } from "./public-urls.mjs";
-import { renderHead, renderFooter, skipLink, pageShell } from "./public-chrome.mjs";
+import { renderHead, renderFooter, skipLink, pageShell, homeLangRedirectScript } from "./public-chrome.mjs";
 
 /* Temporary stand-in for the real home page while André finalizes the
    redesign (see build.mjs's HOME_UNDER_CONSTRUCTION flag) — only the
@@ -37,13 +37,14 @@ export function renderUnderConstructionPage({ lang, siteUrl, social }) {
   const altHrefs = { en: absoluteUrl(siteUrl, homePath("en")), pt: absoluteUrl(siteUrl, homePath("pt")) };
   const canonicalUrl = absoluteUrl(siteUrl, homeHref);
 
-  const head = renderHead({
-    lang,
-    title: s.title,
-    description: s.description,
-    canonicalUrl,
-    altUrls: altHrefs,
-  });
+  const head =
+    renderHead({
+      lang,
+      title: s.title,
+      description: s.description,
+      canonicalUrl,
+      altUrls: altHrefs,
+    }) + homeLangRedirectScript(lang);
 
   const contactLinks = [
     social.email
@@ -63,7 +64,7 @@ export function renderUnderConstructionPage({ lang, siteUrl, social }) {
     <div class="wrap site-header-inner">
       <a class="brand" href="${homeHref}">André Scultori</a>
       <span class="lang-switch">
-        <a href="${altHrefs[otherLang]}" lang="${otherLang === "pt" ? "pt-BR" : "en"}">${escapeHtml(s.lang_switch)}</a>
+        <a href="${altHrefs[otherLang]}" lang="${otherLang === "pt" ? "pt-BR" : "en"}" onclick="try{localStorage.setItem('lang-pref','${otherLang}')}catch(e){}">${escapeHtml(s.lang_switch)}</a>
       </span>
     </div>
   </header>

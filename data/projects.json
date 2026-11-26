@@ -24,7 +24,7 @@
       "en": "Real production system used by a private group — no public demo link."
     },
     "commercial": true,
-    "featured": true,
+    "featured": false,
     "sortOrder": 0
   },
   {
@@ -34,10 +34,10 @@
     "cardImage": "",
     "screenshots": [],
     "description": {
-      "pt": "Dashboard financeiro interativo (HTML/JS puro, sem framework) com pipeline de automação ponta a ponta via n8n — do ERP até a publicação, sem intervenção manual. Dados fictícios para demonstração.",
-      "en": "Interactive financial dashboard (vanilla HTML/JS, zero build step) with an end-to-end automation pipeline via n8n — from source ERP to auto-deploy, no manual steps. Demo data only."
+      "pt": "Dashboard financeiro interativo (HTML/JS puro, sem framework) com pipeline de automação ponta a ponta via n8n — do ERP até a publicação, sem intervenção manual. Em produção, o acesso é autenticado com login Microsoft; esta versão pública usa dados fictícios para demonstração.",
+      "en": "Interactive financial dashboard (vanilla HTML/JS, zero build step) with an end-to-end automation pipeline via n8n — from source ERP to auto-deploy, no manual steps. In production, access is authenticated with Microsoft sign-in; this public version uses fictional demo data."
     },
-    "stack": ["Excel", "n8n", "SharePoint", "Netlify", "JavaScript", "HTML"],
+    "stack": ["Excel", "n8n", "SharePoint", "Netlify", "JavaScript", "HTML", "Microsoft Auth"],
     "links": {
       "live": "https://andrescultori.github.io/dashboard-financeiro/",
       "github": "https://github.com/andrescultori/dashboard-financeiro"
@@ -57,8 +57,8 @@
     "cardImage": "",
     "screenshots": [],
     "description": {
-      "pt": "Sistema com 14 cenários no Make.com automatizando 100% do processo seletivo institucional, do primeiro contato à matrícula. Redução de ~80% nas operações após otimização.",
-      "en": "A system of 14 Make.com scenarios automating 100% of the institution's admissions process, from first contact to enrollment. About 80% reduction in manual operations after optimization."
+      "pt": "Sistema com 16 cenários no Make.com automatizando 100% do processo seletivo institucional, do primeiro contato à matrícula. Redução de ~80% nas operações do Make.com após otimização.",
+      "en": "A system of 16 Make.com scenarios automating 100% of the institution's admissions process, from first contact to enrollment. About 80% fewer Make.com operations after optimization."
     },
     "stack": ["Make.com", "Kommo CRM", "Tally", "ClickUp", "Excel", "Google Sheets", "OneDrive", "Outlook", "JavaScript"],
     "links": {
@@ -84,7 +84,7 @@
       "github": "https://github.com/andrescultori/stravadashboard"
     },
     "commercial": true,
-    "featured": true,
+    "featured": false,
     "sortOrder": 3
   },
   {
@@ -165,7 +165,7 @@
       "github": "https://github.com/andrescultori/timoteo-app"
     },
     "commercial": false,
-    "featured": true,
+    "featured": false,
     "sortOrder": 7
   },
   {
@@ -190,7 +190,7 @@
       "en": "Independent project, not affiliated with Brazil's TSE. Default mode uses fictional data — nothing sensitive to protect."
     },
     "commercial": false,
-    "featured": true,
+    "featured": false,
     "sortOrder": 8
   },
   {
@@ -213,7 +213,7 @@
       "en": "Access to the live site is restricted to UniMissional's institutional whitelist (Google login)."
     },
     "commercial": true,
-    "featured": true,
+    "featured": false,
     "sortOrder": 9
   },
   {
@@ -223,8 +223,8 @@
     "cardImage": "",
     "screenshots": [],
     "description": {
-      "pt": "Biblioteca de funções JavaScript utilitárias, sem dependências, extraídas e generalizadas de uma automação real em produção no Make.com (processo institucional de 14 cenários, 10+ ferramentas integradas), cada uma com teste próprio.",
-      "en": "Dependency-free JavaScript utility library, extracted and generalized from a real production Make.com automation (a 14-scenario institutional process integrating 10+ tools), each function with its own test."
+      "pt": "Biblioteca de funções JavaScript utilitárias, sem dependências, extraídas e generalizadas de uma automação real em produção no Make.com (processo institucional de 16 cenários, 10+ ferramentas integradas), cada uma com teste próprio.",
+      "en": "Dependency-free JavaScript utility library, extracted and generalized from a real production Make.com automation (a 16-scenario institutional process integrating 10+ tools), each function with its own test."
     },
     "stack": ["JavaScript", "Node.js"],
     "links": {
@@ -259,5 +259,41 @@
     "commercial": true,
     "featured": false,
     "sortOrder": 11
+  },
+  {
+    "slug": "orcamentos-felipe-blaya",
+    "category": "apps",
+    "title": "Orçamentos — Felipe Blaya",
+    "cardImage": "",
+    "screenshots": [],
+    "description": {
+      "pt": "Antes, os orçamentos eram enviados manualmente pelo WhatsApp, sem nenhum rastreamento. Agora são criados, enviados e rastreados dentro de uma aplicação web própria, com envio de e-mail e armazenamento de arquivos integrados.",
+      "en": "Before, quotes were sent by hand over WhatsApp, with no tracking at all. Now they're created, sent and tracked inside a dedicated web app, with built-in email delivery and file storage."
+    },
+    "stack": ["Supabase", "Resend", "Google Drive API", "GitHub Pages"],
+    "links": {},
+    "note": {
+      "pt": "Sistema real para um cliente — sem link de demonstração pública.",
+      "en": "Real system built for a client — no public demo link."
+    },
+    "commercial": true,
+    "featured": true,
+    "sortOrder": 12
+  },
+  {
+    "slug": "agape-multimidia",
+    "category": "apps",
+    "title": "Ágape Multimídia — Landing Pages",
+    "cardImage": "",
+    "screenshots": [],
+    "description": {
+      "pt": "O site antigo da Ágape Multimídia, em WordPress, estava desatualizado e difícil de editar. Os serviços agora têm landing pages novas e identidade visual redesenhada, com custos reduzidos ao sair do WordPress.",
+      "en": "Ágape Multimídia's old WordPress site was outdated and slow to edit. Its services now have new landing pages and a redesigned visual identity, with lower running costs after moving off WordPress."
+    },
+    "stack": [],
+    "links": {},
+    "commercial": true,
+    "featured": true,
+    "sortOrder": 13
   }
 ]

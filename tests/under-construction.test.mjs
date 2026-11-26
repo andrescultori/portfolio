@@ -33,7 +33,10 @@ test("renderUnderConstructionPage hides a contact button whose link isn't set", 
 
 test("scripts/build.mjs's HOME_UNDER_CONSTRUCTION flag only swaps the home page, nothing else", () => {
   const build = readFileSync(path.join(REPO_ROOT, "scripts", "build.mjs"), "utf8");
-  assert.match(build, /const HOME_UNDER_CONSTRUCTION = (true|false);/);
+  // Defaults to true (placeholder) unless PREVIEW_HOME=1 is set locally —
+  // never set in Cloudflare Pages, so production always gets the
+  // placeholder until André flips this back to false for good.
+  assert.match(build, /const HOME_UNDER_CONSTRUCTION = process\.env\.PREVIEW_HOME === "1" \? false : true;/);
   assert.match(build, /renderUnderConstructionPage/);
   // The flag's branch must be scoped to the home-page render only — the
   // work index and project pages keep calling their own real renderers
@@ -41,11 +44,7 @@ test("scripts/build.mjs's HOME_UNDER_CONSTRUCTION flag only swaps the home page,
   assert.match(build, /renderWorkIndexPage\(\{ lang, projects, siteUrl: SITE_URL, social: effectiveLinks \}\)/);
 });
 
-test("dist/: when under construction, / and /pt/ show the placeholder but /work/ and a project page don't", { skip: !existsSync(DIST) }, () => {
-  const build = readFileSync(path.join(REPO_ROOT, "scripts", "build.mjs"), "utf8");
-  const flagOn = /const HOME_UNDER_CONSTRUCTION = true;/.test(build);
-  if (!flagOn) return; // nothing to check once the flag is flipped back
-
+test("dist/: by default (no PREVIEW_HOME), / and /pt/ show the placeholder but /work/ and a project page don't", { skip: !existsSync(DIST) }, () => {
   const home = readFileSync(path.join(DIST, "index.html"), "utf8");
   assert.match(home, /Under construction/);
 

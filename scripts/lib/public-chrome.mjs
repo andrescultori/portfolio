@@ -1,9 +1,9 @@
 import { escapeHtml, safeJsonLd } from "./html.mjs";
 import { t } from "./public-strings.mjs";
-import { OTHER_LANG } from "./public-urls.mjs";
+import { HOME_SECTIONS } from "./home-sections.mjs";
 
 const FONTS_LINK =
-  '<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">';
+  '<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600&display=swap">';
 
 /* <head>: title/description, canonical + hreflang alternates (en, pt-BR,
    x-default -> en), OG/Twitter, optional JSON-LD. assetBase lets project
@@ -14,6 +14,7 @@ export function renderHead({ lang, title, description, canonicalUrl, altUrls, og
   const robotsTag = robots ? `\n  <meta name="robots" content="${escapeHtml(robots)}">` : "";
   return `<meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0A0C10">
   <title>${escapeHtml(title)}</title>
   <meta name="description" content="${escapeHtml(description)}">${robotsTag}
   <link rel="canonical" href="${canonicalUrl}">
@@ -44,32 +45,67 @@ export const BOOTSTRAP_SCRIPT = `<script>
     })();
   </script>`;
 
+/* EN-only, home-page-only inline redirect: if the visitor hasn't already
+   picked a language (no "lang-pref" in localStorage) and their browser
+   reports a Portuguese locale, send them to /pt/ before paint. Cloudflare
+   Pages' _redirects can't read Accept-Language, so this is done client-side.
+   Never added to PT pages (nothing to redirect to) or to work/project pages
+   (only the home page should auto-redirect). Callers append this string to
+   renderHead()'s own return value. */
+export function homeLangRedirectScript(lang) {
+  if (lang !== "en") return "";
+  return `
+  <script>
+    (function () {
+      try {
+        if (localStorage.getItem("lang-pref")) return;
+        if (navigator.language && navigator.language.toLowerCase().indexOf("pt") === 0) {
+          location.replace("/pt/");
+        }
+      } catch (e) {}
+    })();
+  </script>`;
+}
+
+/* Stores the visitor's explicit choice so homeLangRedirectScript() above
+   never overrides it again. Inline onclick (not a motion.js listener) so it
+   fires synchronously before the browser follows the link's href — same
+   reasoning as any plain <a>, no SPA router involved. */
+function langPrefOnclick(lang) {
+  return `try{localStorage.setItem('lang-pref','${lang}')}catch(e){}`;
+}
+
 export function renderHeader({ lang, homeHref, workHref, altHrefs, bookingUrl, activeNav }) {
   const s = (key) => t(lang, key);
   const bookBtn = bookingUrl
     ? `<a class="btn btn-primary btn-sm" href="${escapeHtml(bookingUrl)}" target="_blank" rel="noopener">${escapeHtml(s("nav_book_call"))}</a>`
     : "";
-  const navLinks = (idPrefix) => `
+  const contactHref = `${homeHref}#contact`;
+  const getInTouchBtn = `<a class="btn btn-outline btn-sm nav-get-in-touch" href="${contactHref}">${escapeHtml(s("nav_get_in_touch"))}</a>`;
+  const navLinks = (forPanel) => `
       <a class="nav-link" href="${homeHref}#services">${escapeHtml(s("nav_services"))}</a>
       <a class="nav-link"${activeNav === "work" ? ' aria-current="page"' : ""} href="${workHref}">${escapeHtml(s("nav_work"))}</a>
-      <a class="nav-link" href="${homeHref}#process">${escapeHtml(s("nav_process"))}</a>
-      <a class="nav-link" href="${homeHref}#about">${escapeHtml(s("nav_about"))}</a>`;
+      ${HOME_SECTIONS.process ? `<a class="nav-link" href="${homeHref}#process">${escapeHtml(s("nav_process"))}</a>` : ""}
+      <a class="nav-link" href="${homeHref}#about">${escapeHtml(s("nav_about"))}</a>${
+    forPanel ? `\n      <a class="nav-link" href="${contactHref}">${escapeHtml(s("nav_get_in_touch"))}</a>` : ""
+  }`;
 
   return `<header class="site-header">
     <div class="wrap site-header-inner">
       <a class="brand" href="${homeHref}">André Scultori</a>
-      <nav class="nav-links" aria-label="Primary">${navLinks()}
+      <nav class="nav-links" aria-label="Primary">${navLinks(false)}
         <span class="lang-switch">
-          <a href="${altHrefs.en}" lang="en"${lang === "en" ? ' aria-current="page"' : ""}>EN</a>
-          <a href="${altHrefs.pt}" lang="pt-BR"${lang === "pt" ? ' aria-current="page"' : ""}>PT</a>
+          <a href="${altHrefs.en}" lang="en" onclick="${langPrefOnclick("en")}"${lang === "en" ? ' aria-current="page"' : ""}>EN</a>
+          <a href="${altHrefs.pt}" lang="pt-BR" onclick="${langPrefOnclick("pt")}"${lang === "pt" ? ' aria-current="page"' : ""}>PT</a>
         </span>
+        ${getInTouchBtn}
         ${bookBtn}
         <button type="button" class="nav-toggle" aria-label="${escapeHtml(s("nav_menu"))}" aria-expanded="false" aria-controls="nav-panel">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
         </button>
       </nav>
     </div>
-    <div class="nav-panel" id="nav-panel">${navLinks()}</div>
+    <div class="nav-panel" id="nav-panel">${navLinks(true)}</div>
   </header>`;
 }
 
