@@ -132,6 +132,12 @@ test("buildRedirects 301s the retired pages and every old /projeto/<slug>/ URL t
   assert.match(txt, /^\/projeto\/apuracao-eleicoes\/ \/pt\/projetos\/apuracao-eleicoes\/ 301$/m);
 });
 
+test("buildRedirects sends /hub to the private hub with a temporary (302) redirect", () => {
+  const txt = buildRedirects([]);
+  assert.match(txt, /^\/hub https:\/\/amshub\.pages\.dev\/ 302$/m);
+  assert.match(txt, /^\/hub\/\* https:\/\/amshub\.pages\.dev\/:splat 302$/m);
+});
+
 // --- hidden-when-empty behavior ------------------------------------------------
 
 test("the 'Worked with' clients strip renders nothing when no client is approved", () => {
@@ -357,7 +363,7 @@ test("classes combined with .wrap never zero the horizontal gutter", async () =>
   // vertical-only reason) resets padding-left/right to 0 too, silently
   // cancelling .wrap's own `padding: 0 var(--gutter)` and leaving mobile
   // content flush against the viewport edge. This caught a real bug once
-  // (.uc-wrap) and must keep catching it for every new class.
+  // (see git blame) and must keep catching it for every new class.
   const { readFile, readdir } = await import("node:fs/promises");
   const css = await readFile(new URL("../css/site.css", import.meta.url), "utf8");
   const libDir = new URL("../scripts/lib/", import.meta.url);

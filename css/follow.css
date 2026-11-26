@@ -47,7 +47,8 @@ a { color: var(--fw-accent); }
   color: var(--fw-muted);
 }
 
-#fw-main { padding: 32px 0 64px; }
+/* Vertical only: the horizontal gutter comes from .fw-wrap (an ID rule here would override it, which left the content flush with the screen edge on phones). */
+#fw-main { padding-top: 32px; padding-bottom: 64px; }
 
 h1 { font-size: 28px; line-height: 1.2; font-weight: 600; margin: 0 0 12px; letter-spacing: -0.01em; }
 h2 { font-size: 18px; font-weight: 600; margin: 0 0 12px; }
@@ -148,6 +149,18 @@ h3 { font-size: 15px; font-weight: 600; margin: 16px 0 8px; color: var(--fw-mute
 .fw-task-item.is-done .fw-task-title { color: var(--fw-muted); text-decoration: line-through; }
 .fw-task-check { flex: none; width: 16px; text-align: center; color: var(--fw-accent); }
 .fw-task-title { flex: 1; }
+.fw-task-link {
+  flex: none;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--fw-accent);
+  text-decoration: none;
+  border: 1px solid var(--fw-line);
+  border-radius: 999px;
+  padding: 3px 10px;
+  white-space: nowrap;
+}
+.fw-task-link:hover, .fw-task-link:focus-visible { border-color: var(--fw-accent); text-decoration: underline; }
 .fw-owner-tag {
   font-family: "IBM Plex Mono", monospace;
   font-size: 11px;
